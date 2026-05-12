@@ -290,7 +290,7 @@ class LockScreenView: NSView {
 
         // ── Center content ──
 
-        let containerHeight: CGFloat = 360
+        let containerHeight: CGFloat = 400
         let container = NSView(frame: NSRect(
             x: bounds.midX - 300, y: bounds.midY - containerHeight / 2 + 30,
             width: 600, height: containerHeight
@@ -321,8 +321,8 @@ class LockScreenView: NSView {
         )
         container.addSubview(timeLabel)
 
-        // ── Streak: 16px, rgba(255,255,255,0.45), letter-spacing 1px ──
-        y -= 48
+        // ── Streak: 18px, rgba(255,255,255,0.58), letter-spacing 0.8px ──
+        y -= 50
         let statText: String
         if stats.streak > 0 {
             statText = "🔥 连续早睡第 \(stats.streak) 天"
@@ -331,7 +331,7 @@ class LockScreenView: NSView {
         } else {
             statText = "今晚是新的开始"
         }
-        let statLabel = NSTextField(frame: NSRect(x: 0, y: y, width: 600, height: 24))
+        let statLabel = NSTextField(frame: NSRect(x: 0, y: y, width: 600, height: 30))
         statLabel.isBordered = false
         statLabel.isEditable = false
         statLabel.isSelectable = false
@@ -342,18 +342,17 @@ class LockScreenView: NSView {
         statLabel.attributedStringValue = NSAttributedString(
             string: statText,
             attributes: [
-                .font: NSFont.systemFont(ofSize: 16, weight: .regular),
-                .foregroundColor: NSColor(white: 1.0, alpha: 0.45),
-                .kern: 1.0,
+                .font: NSFont.systemFont(ofSize: 18, weight: .medium),
+                .foregroundColor: NSColor(white: 1.0, alpha: 0.58),
+                .kern: 0.8,
                 .paragraphStyle: statPS
             ]
         )
         container.addSubview(statLabel)
 
-        // ── Quote: serif font, 26px, rgba(255,255,255,0.85), line-height 1.9, letter-spacing 2px ──
+        // ── Quote: serif font, 26px, rgba(255,255,255,0.85), generous line-height, letter-spacing 2px ──
         // Brackets 「」 in rgba(255,255,255,0.25)
-        y -= 44
-        y -= 100
+        let quoteWidth: CGFloat = 560
         let serifFont = NSFont(name: "Songti SC", size: 26)
             ?? NSFont(name: "STSongti-SC-Regular", size: 26)
             ?? NSFont.systemFont(ofSize: 26, weight: .regular)
@@ -380,14 +379,26 @@ class LockScreenView: NSView {
         quoteStr.append(NSAttributedString(string: todayQuote(), attributes: textAttrs))
         quoteStr.append(NSAttributedString(string: "」", attributes: bracketAttrs))
 
-        let quoteLabel = NSTextField(frame: NSRect(x: 60, y: y, width: 480, height: 100))
+        let measuredQuoteHeight = ceil(quoteStr.boundingRect(
+            with: NSSize(width: quoteWidth, height: CGFloat.greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            context: nil
+        ).height)
+        let quoteHeight = max(CGFloat(150), measuredQuoteHeight + 28)
+
+        y -= 54
+        y -= quoteHeight
+        let quoteLabel = NSTextField(frame: NSRect(x: (600 - quoteWidth) / 2, y: y, width: quoteWidth, height: quoteHeight))
         quoteLabel.isBordered = false
         quoteLabel.isEditable = false
         quoteLabel.isSelectable = false
         quoteLabel.backgroundColor = .clear
         quoteLabel.alignment = .center
         quoteLabel.lineBreakMode = .byWordWrapping
-        quoteLabel.maximumNumberOfLines = 3
+        quoteLabel.maximumNumberOfLines = 0
+        quoteLabel.cell?.wraps = true
+        quoteLabel.cell?.isScrollable = false
+        quoteLabel.cell?.usesSingleLineMode = false
         quoteLabel.attributedStringValue = quoteStr
         quoteLabel.wantsLayer = true
         container.addSubview(quoteLabel)
