@@ -255,8 +255,36 @@ else:
 }
 
 cmd_test() {
-  # Quick test: launch the overlay for 10 seconds
-  ui_step "测试锁屏覆盖层（10 秒后自动退出）..."
+  # Quick test: launch the overlay with a selectable streak animation style.
+  local style="${1:-glow}"
+  local seconds="${2:-10}"
+
+  # Backward-friendly shorthand: zzz test 8
+  if [[ "$style" =~ ^[0-9]+$ ]]; then
+    seconds="$style"
+    style="glow"
+  fi
+
+  if ! [[ "$seconds" =~ ^[0-9]+$ ]] || (( seconds < 1 || seconds > 120 )); then
+    ui_error "测试秒数需要是 1-120 之间的数字"
+    ui_dim "用法: zzz test [glow|orbit|seal|cycle] [seconds]"
+    return 1
+  fi
+
+  local -a styles=()
+  case "$style" in
+    glow|orbit|seal)
+      styles=("$style")
+      ;;
+    cycle)
+      styles=(glow orbit seal)
+      ;;
+    *)
+      ui_error "未知锁屏样式: $style"
+      ui_dim "可用: glow, orbit, seal, cycle"
+      return 1
+      ;;
+  esac
 
   local overlay="$ZZZ_ROOT/bin/zzz-overlay"
   [ ! -x "$overlay" ] && overlay="$HOME/.timetosleep/bin/zzz-overlay"
@@ -266,10 +294,15 @@ cmd_test() {
     return 1
   fi
 
-  "$overlay" &
-  local pid=$!
-  sleep 10
-  kill $pid 2>/dev/null
+  for current_style in "${styles[@]}"; do
+    ui_step "测试锁屏覆盖层：${current_style}（${seconds} 秒后自动退出）..."
+    ZZZ_STREAK_STYLE="$current_style" "$overlay" &
+    local pid=$!
+    sleep "$seconds"
+    kill "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
+  done
+
   ui_success "测试完成"
 }
 
@@ -333,7 +366,9 @@ cmd_help() {
   ui_print "                   修改设置"
   ui_print "  ${BOLD}zzz tonight off${RESET}  跳过今晚"
   ui_print "  ${BOLD}zzz log${RESET}          历史记录"
-  ui_print "  ${BOLD}zzz test${RESET}         测试锁屏（10 秒）"
+  ui_print "  ${BOLD}zzz test${RESET}         测试锁屏（默认 glow，10 秒）"
+  ui_print "  ${BOLD}zzz test${RESET} ${C_CYAN}<style> [秒数]${RESET}"
+  ui_print "                   style: glow, orbit, seal, cycle"
   ui_print "  ${BOLD}zzz uninstall${RESET}    卸载"
   ui_print "  ${BOLD}zzz help${RESET}         显示帮助"
   ui_blank
@@ -347,7 +382,7 @@ case "${1:-}" in
   config)     shift; cmd_config "$@" ;;
   tonight)    shift; cmd_tonight "$@" ;;
   log)        cmd_log ;;
-  test)       cmd_test ;;
+  test)       shift; cmd_test "$@" ;;
   uninstall)  cmd_uninstall ;;
   help|--help|-h) cmd_help ;;
   *)

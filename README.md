@@ -43,7 +43,8 @@ zzz status       # 详细统计
 zzz config       # 查看 / 修改设置
 zzz tonight off  # 跳过今晚（需要说明原因）
 zzz log          # 历史记录
-zzz test         # 测试锁屏（10 秒）
+zzz test         # 测试锁屏（默认 glow，10 秒）
+zzz test cycle 8 # 依次预览 glow / orbit / seal 三种连续天数动效
 zzz uninstall    # 卸载
 ```
 

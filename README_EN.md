@@ -43,7 +43,8 @@ zzz status       # Detailed stats
 zzz config       # View / change settings
 zzz tonight off  # Skip tonight (must give a reason)
 zzz log          # History
-zzz test         # Test the lock screen for 10 seconds
+zzz test         # Test the lock screen (default glow style, 10 seconds)
+zzz test cycle 8 # Preview glow / orbit / seal streak animations in sequence
 zzz uninstall    # Remove everything
 ```
 
