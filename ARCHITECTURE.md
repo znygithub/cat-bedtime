@@ -1,243 +1,201 @@
-# TimeToSleep 代码架构
+# Cat Bedtime 架构
 
-本文档面向接手项目的开发者，帮你快速理解整体结构和各模块的职责。
+本文档描述当前代码现状。产品已经从早期的 TimeToSleep 契约叙事转为猫猫睡觉叙事，但运行时目录和 launchd label 仍保留 `timetosleep`，用于兼容已有安装。
 
 ## 目录结构
 
-```
-TimeToSleep/
+```text
+cat-bedtime/
 ├── bin/
-│   ├── zzz                 # CLI 主入口，所有用户命令的路由
-│   └── zzz-overlay         # 预编译的 Swift 全屏锁屏二进制（arm64 + x86_64）
+│   ├── zzz                 # CLI 入口
+│   └── zzz-overlay         # 预编译 Swift 全屏覆盖层
 ├── lib/
-│   ├── config.sh           # 配置读写（~/.timetosleep/config.json）
-│   ├── ui.sh               # 终端 UI 工具包（颜色、框线、交互式输入组件）
-│   ├── schedule.sh         # launchd 定时任务的注册 / 注销 / 更新
-│   └── stats.sh            # 打卡记录和连续天数统计
+│   ├── config.sh           # 配置读写与时间工具
+│   ├── schedule.sh         # launchd agent 安装 / 更新 / 卸载
+│   ├── stats.sh            # 猫猫来访记录和连续记录计算
+│   └── ui.sh               # 终端 UI 组件
 ├── src/
-│   ├── init.sh             # Onboarding 交互流程（zzz init）
-│   ├── daemon.sh           # 守护进程：睡前提醒 → 锁定 → 唤醒 三阶段编排
-│   ├── bootcheck.sh        # 开机自检：登录时如在锁定时段则立即锁屏
-│   ├── media.sh            # 媒体控制（暂停播放器、音量渐降）
-│   ├── brightness.sh       # 屏幕亮度控制（渐暗、保存/恢复）
+│   ├── init.sh             # zzz init 领养流程
+│   ├── daemon.sh           # 睡前提醒 → 锁屏 → 唤醒恢复
+│   ├── bootcheck.sh        # 登录时锁屏窗口自检
+│   ├── media.sh            # 暂停媒体、保存 / 恢复音量
+│   ├── brightness.sh       # 保存 / 恢复 / 渐变亮度
 │   └── overlay/
-│       ├── LockScreen.swift # 全屏锁屏覆盖层源码
-│       └── build.sh        # 编译脚本（仅开发者需要）
+│       ├── LockScreen.swift              # 正式锁屏覆盖层
+│       ├── build.sh                      # 编译正式覆盖层
+│       ├── CatBedtimePreview.swift       # 手绘猫猫动效预览
+│       ├── build-cat-bedtime-preview.sh  # 手绘预览编译脚本
+│       ├── CatVideoBedtimePreview.swift  # 视频合成预览
+│       └── build-cat-video-preview.sh    # 视频预览编译脚本
+├── tests/                  # Bash 回归测试
 ├── install.sh              # 安装脚本
-├── README.md               # 产品说明（中文）
-└── README_EN.md            # 产品说明（英文）
+├── README.md               # 中文产品说明
+├── README_EN.md            # 英文产品说明
+└── PITFALLS.md             # 历史踩坑与回归风险
 ```
 
 ## 运行时数据
 
-安装后所有运行时数据存储在 `~/.timetosleep/`：
+安装后数据存储在 `~/.timetosleep/`：
 
-```
+```text
 ~/.timetosleep/
-├── bin/                    # 可执行文件副本
-├── lib/                    # 库文件副本
-├── src/                    # 源脚本副本
-├── config.json             # 用户配置
-├── stats.json              # 打卡历史
-├── saved_brightness        # 锁定前保存的屏幕亮度（临时）
-├── saved_volume            # 锁定前保存的音量（临时）
-├── skip_tonight            # 今晚跳过标记（临时）
-└── daemon.log              # 守护进程日志
+├── bin/                    # 安装后的 zzz 和 zzz-overlay
+├── lib/                    # 安装后的库脚本
+├── src/                    # 安装后的运行脚本
+├── config.json             # 猫猫日程配置
+├── stats.json              # 到访 / 请假记录
+├── saved_brightness        # 锁屏前亮度备份
+├── saved_volume            # 锁屏前音量备份
+├── skip_tonight            # 今晚请假标记
+└── daemon.log              # daemon / bootcheck 日志
 ```
 
 ## 核心流程
 
-### 1. 安装（install.sh）
+### 1. 安装
 
-```
-install.sh
-  ├── 检查 macOS 环境
-  ├── 创建 ~/.timetosleep/ 目录
-  ├── 复制所有文件（含预编译的 zzz-overlay）
-  └── 添加 zzz 到 PATH（/usr/local/bin 或写入 .zshrc）
-```
+`install.sh` 做四件事：
 
-不需要编译，不需要 Xcode。二进制文件直接从仓库复制。
+1. 检查 macOS 和 `python3`。
+2. 复制 `bin/`、`lib/`、`src/` 到 `~/.timetosleep/`。
+3. 创建 `zzz` 命令链接或写入 shell PATH。
+4. 打开一个 Terminal 窗口运行 `zzz init`。
 
-### 2. Onboarding（src/init.sh）
+正式安装不需要 Xcode；仓库内的 `bin/zzz-overlay` 已经是预编译二进制。
 
-`zzz init` 触发，交互式收集用户设置：
+### 2. 领养设置
 
-```
-init.sh
-  ├── 展示欢迎界面
-  ├── 收集设置（睡觉时间、起床时间、启用日、提醒提前量）
-  ├── 展示契约摘要
-  ├── 要求用户输入承诺语确认（3 次重试机会）
-  ├── 写入 config.json
-  ├── 初始化 stats.json
-  └── 调用 schedule.sh 注册 launchd 定时任务（含开机自检）
-```
+`zzz init` 会执行 `src/init.sh`：
 
-### 3. 每日触发（daemon.sh）—— 最核心的流程
+1. 展示猫猫领养说明。
+2. 收集猫猫睡觉时间、离开时间、来住日子和提前提醒时间。
+3. 要求用户输入确认句。
+4. 写入 `config.json`，初始化 `stats.json`。
+5. 调用 `lib/schedule.sh` 注册 launchd agent。
 
-launchd 在每天 `(bedtime - winddown)` 时间点启动 daemon.sh，它编排三个阶段：
+### 3. 每晚流程
 
-```
-daemon.sh
-  │
-  ├── 前置检查
-  │   ├── 读取 config.json
-  │   ├── 今天是否在启用日？否 → 退出
-  │   └── 是否有 skip_tonight 标记？是 → 记录跳过，退出
-  │
-  ├── 阶段一：睡前提醒（Wind-down）
-  │   ├── 保存当前亮度和音量
-  │   ├── t-30min: 系统通知 + 轻微降亮度
-  │   ├── t-20min: 再次通知 + 继续降亮度
-  │   ├── t-10min: 警告通知 + 降音量 + 大幅降亮度
-  │   └── 等待到精确的 bedtime
-  │
-  ├── 阶段二：锁定（Lockdown）
-  │   ├── media.sh: 暂停所有媒体播放器，静音
-  │   ├── brightness.sh: 亮度降到最低
-  │   ├── 启动 zzz-overlay（全屏覆盖层）
-  │   ├── 如果 overlay 被杀掉 → 2 秒后自动重启（循环）
-  │   └── 等待到起床时间 → overlay 自动退出
-  │
-  └── 阶段三：唤醒（Wake-up）
-      ├── 恢复亮度和音量
-      ├── 发送早安通知（含连续天数）
-      └── 记录今日为 "completed"
-```
+`com.timetosleep.daemon` 在 `bedtime - winddown_minutes` 触发 `src/daemon.sh`。
 
-### 4. 开机自检（src/bootcheck.sh）
+流程：
 
-防止用户通过重启电脑绕过锁定。由 `com.timetosleep.bootcheck` launchd agent 触发，`RunAtLoad: true`。
+1. 读取配置，检查今天是否启用。
+2. 如果存在有效 `skip_tonight`，记录为请假并退出。
+3. 保存当前亮度和音量。
+4. 根据真实墙钟分阶段发送提醒、降低亮度和音量。
+5. 到睡觉时间后暂停媒体、静音、降低亮度并启动 `zzz-overlay`。
+6. 如果覆盖层意外退出且仍在锁屏时段，2 秒后重新启动。
+7. 起床时间后恢复亮度和音量，记录 `completed`。
 
-```
-bootcheck.sh
-  ├── 读取 config.json
-  ├── 今天是否在启用日？否 → 退出
-  ├── 是否有 skip_tonight 标记？是 → 退出
-  ├── 当前时间是否在 bedtime ~ wakeup 之间？
-  │   ├── 否 → 退出
-  │   └── 是 → 暂停媒体，启动 overlay，等待到起床时间
-  └── 起床时间到 → 恢复亮度和音量
-```
+`daemon.sh` 的等待逻辑按墙钟轮询，不依赖一次长 `sleep`，避免 Mac 合盖休眠后时间错位。
 
-### 5. 全屏覆盖层（src/overlay/LockScreen.swift）
+### 4. 登录自检
 
-一个独立的 Swift 程序，没有依赖 Xcode 项目，直接 `swiftc` 编译。
+`com.timetosleep.bootcheck` 在登录时触发 `src/bootcheck.sh`。
 
-架构很简单，四个组件：
+它会检查：
 
+- 配置是否存在。
+- 当前锁屏窗口对应的睡觉日是否是猫猫来住日。跨午夜时，凌晨部分归属前一天晚上。
+- 今晚是否请假。
+- 当前时间是否在 `bedtime ~ wakeup` 锁屏窗口内。
 
-| 组件                     | 职责                                          |
-| ---------------------- | ------------------------------------------- |
-| `SleepConfig`          | 从 config.json 读取起床时间和启用日                    |
-| `SleepStats`           | 从 stats.json 读取打卡记录，计算连续天数（跳过非启用日、请假日、无记录日） |
-| `LockWindowController` | 为每个显示器创建一个全屏窗口，管理生命周期                       |
-| `LockScreenView`       | 渲染锁屏界面（时钟、连续天数/累计天数、每日一句）                   |
+如果仍在锁屏窗口内，会启动覆盖层并保持它存活到起床时间。
 
+### 5. 正式锁屏覆盖层
 
-关键技术点：
+`src/overlay/LockScreen.swift` 是正式锁屏程序，编译产物为 `bin/zzz-overlay`。
 
-- 窗口层级 = `CGShieldingWindowLevel + 1`，在几乎所有窗口之上
-- 每 2 秒 keepAlive 循环强制窗口置顶
-- 监听 `didChangeScreenParametersNotification`，外接显示器变化时自动重建窗口
-- 每秒检查当前时间，到达起床时间自动 `exit(0)`
-- 锁屏文案使用宋体（衬线体），每天根据日期轮换，共 10 条内置文案
-- 有连胜显示「连续早睡第 X 天」，无连胜但有历史显示「累计早睡 X 天」
+当前正式覆盖层做这些事：
 
-### 6. CLI 路由（bin/zzz）
+- 为每个显示器创建一个全屏 borderless window。
+- 使用 `CGShieldingWindowLevel + 1` 保持在大多数窗口之上。
+- 每 2 秒重置窗口层级和大小。
+- 监听显示器变化并重建窗口。
+- 显示当前时间、猫猫口吻文案、醒来倒计时和“猫猫早上 HH:MM 走”。
+- 到起床窗口后自动退出。
+- 支持异常逃生：短时间内连按两下 ESC 会重新读取配置；只有当前不在锁屏窗口或今天不是启用日时才退出。
 
-所有用户命令的入口，结构是一个简单的 case 路由：
+`SleepStats` 仍保留在 Swift 代码中，主要为未来宠物成长系统预留；当前正式锁屏不展示 streak 动效。
 
-```
-zzz [command] [args]
-  │
-  ├── (空)         → cmd_default()    显示今晚状态
-  ├── init         → cmd_init()       调用 src/init.sh
-  ├── status       → cmd_status()     详细统计
-  ├── config       → cmd_config()     查看/修改设置
-  ├── tonight off  → cmd_tonight()    跳过今晚
-  ├── log          → cmd_log()        历史记录
-  ├── test         → cmd_test()       启动 overlay 10 秒
-  ├── uninstall    → cmd_uninstall()  卸载
-  └── help         → cmd_help()       帮助
-```
+### 6. 预览程序
 
-### 7. 连续天数计算逻辑
+`CatBedtimePreview.swift` 和 `CatVideoBedtimePreview.swift` 是开发预览。它们会随 `src/` 被复制到安装目录，但没有用户命令入口，也不会参与正式覆盖层。
 
-从昨天往前逐日检查：
+- 手绘预览用于验证猫猫走动、拉灯、上床睡觉的纯代码动效。
+- 视频预览用于验证透明视频 / 绿幕 / 黑底素材与真实桌面截图的合成。
 
-- 该日有 `completed` 记录 → streak +1，继续往前
-- 该日有 `skipped` 记录（请假）→ 跳过，不断连
-- 该日不在启用日 → 跳过，不断连
-- 该日在启用日但无记录（没开电脑）→ 跳过，不断连
+这些文件是可继续实验的素材管线，不代表当前正式锁屏一定包含视频猫猫动画。
 
-Shell 端（`lib/stats.sh` → `stats_streak()`）和 Swift 端（`SleepStats.load()`）使用相同逻辑。
+## launchd
 
-## launchd 定时任务
+安装后会写入两个用户级 agent：
 
-安装后会注册两个 launchd user agent：
+| Label | 触发方式 | 职责 |
+| --- | --- | --- |
+| `com.timetosleep.daemon` | 每天 `bedtime - winddown` | 执行睡前提醒和锁屏流程 |
+| `com.timetosleep.bootcheck` | 登录时 `RunAtLoad` | 防止重启绕过锁屏窗口 |
 
+Plist 文件位于 `~/Library/LaunchAgents/`。
 
-| Agent                       | 触发方式                     | 职责               |
-| --------------------------- | ------------------------ | ---------------- |
-| `com.timetosleep.daemon`    | 每天定时（bedtime - winddown） | 启动睡前提醒 → 锁定流程    |
-| `com.timetosleep.bootcheck` | 每次登录（RunAtLoad）          | 检查是否在锁定时段，是则立即锁屏 |
+## 模块依赖
 
+```text
+bin/zzz
+├── lib/config.sh
+├── lib/ui.sh
+├── lib/stats.sh
+└── lib/schedule.sh       # 仅 config / init / uninstall / 时间变更时加载
 
-Plist 文件存储在 `~/Library/LaunchAgents/`。
+src/init.sh
+├── lib/ui.sh
+├── lib/config.sh
+├── lib/stats.sh
+└── lib/schedule.sh
 
-## 模块依赖关系
+src/daemon.sh
+├── lib/config.sh
+├── lib/stats.sh
+├── src/media.sh
+├── src/brightness.sh
+└── bin/zzz-overlay
 
-```
-bin/zzz ──────────┬── lib/config.sh    ← 被几乎所有模块依赖
-                  ├── lib/ui.sh        ← 被所有面向用户的模块依赖
-                  ├── lib/stats.sh     ← 依赖 config.sh
-                  └── lib/schedule.sh  ← 依赖 config.sh
+src/bootcheck.sh
+├── lib/config.sh
+├── src/media.sh
+├── src/brightness.sh
+└── bin/zzz-overlay
 
-src/init.sh ──────┬── lib/ui.sh
-                  ├── lib/config.sh
-                  ├── lib/stats.sh
-                  └── lib/schedule.sh
-
-src/daemon.sh ────┬── lib/config.sh
-                  ├── lib/stats.sh
-                  ├── src/media.sh     ← 无依赖，纯 osascript 调用
-                  ├── src/brightness.sh ← 无依赖，纯 python3/CoreDisplay 调用
-                  └── bin/zzz-overlay  ← 独立二进制，通过进程启动
-
-src/bootcheck.sh ─┬── lib/config.sh
-                  ├── src/media.sh
-                  ├── src/brightness.sh
-                  └── bin/zzz-overlay
-
-bin/zzz-overlay ──┬── ~/.timetosleep/config.json（读取起床时间、启用日）
-                  └── ~/.timetosleep/stats.json（读取打卡记录，计算连续天数）
+bin/zzz-overlay
+├── ~/.timetosleep/config.json
+└── ~/.timetosleep/stats.json
 ```
 
-## 技术选型说明
+## 测试
 
+当前测试是 Bash 脚本：
 
-| 选择                      | 原因                                                   |
-| ----------------------- | ---------------------------------------------------- |
-| Shell 脚本（非 Python/Node） | 零依赖，macOS 自带 bash。终端产品用终端语言，天然契合                     |
-| Swift 做锁屏（非纯终端）         | 纯终端窗口可以被轻易关闭。需要 NSWindow 的窗口层级控制才能实现真正的"锁死"          |
-| 预编译通用二进制                | 用户不需要装 Xcode。arm64 + x86_64 通用，覆盖所有 Mac              |
-| launchd（非 cron）         | macOS 原生调度器，支持用户级 agent，系统休眠唤醒后自动补触发                 |
-| 双 launchd agent         | daemon 负责定时触发，bootcheck 负责开机自检，两道保障                  |
-| python3 做 JSON 和亮度控制    | macOS 自带 python3。jq 不是所有机器都有，python3 作为 fallback 更可靠 |
-| osascript 做媒体控制         | 可以直接控制 Spotify、Apple Music 等原生应用，无需第三方库              |
+```bash
+tests/test-lockdown-window-and-syntax.sh
+tests/test-overslept-detection.sh
+tests/test-config-numeric-fallback.sh
+```
 
+它们覆盖：
 
-## 想改代码？从这里开始
+- `daemon.sh` / `bootcheck.sh` 语法。
+- 23:00 到 07:00 这类跨午夜锁屏窗口。
+- 合盖休眠后不应在白天误锁。
+- `winddown_minutes` 缺失或非法时的默认值。
 
-- **改锁屏界面的样式**：`src/overlay/LockScreen.swift` → `LockScreenView.setupUI()`，改完后运行 `src/overlay/build.sh` 重新编译
-- **改锁屏文案**：`src/overlay/LockScreen.swift` 顶部的 `quotes` 数组
-- **加新命令**：`bin/zzz` 底部的 case 路由加一条，写对应的 `cmd_xxx()` 函数
-- **改 onboarding 流程**：`src/init.sh` → `run_init()`
-- **改睡前提醒/锁定行为**：`src/daemon.sh` → `wind_down()` 和 `lockdown()`
-- **改开机自检逻辑**：`src/bootcheck.sh`
-- **改终端 UI 组件**：`lib/ui.sh`，所有交互组件都在这里
-- **改定时调度逻辑**：`lib/schedule.sh`，生成 launchd plist 的地方
-- **改连续天数规则**：`lib/stats.sh` → `stats_streak()` 和 `src/overlay/LockScreen.swift` → `SleepStats.load()`
+## 改代码从哪里开始
 
+- 改 CLI 文案或命令：`bin/zzz`
+- 改领养流程：`src/init.sh`
+- 改提醒、锁屏、唤醒恢复：`src/daemon.sh`
+- 改重启后自检：`src/bootcheck.sh`
+- 改 launchd plist：`lib/schedule.sh`
+- 改正式锁屏 UI：`src/overlay/LockScreen.swift`
+- 重新编译正式覆盖层：`src/overlay/build.sh`
+- 做猫猫动效实验：`src/overlay/CatBedtimePreview.swift` 或 `src/overlay/CatVideoBedtimePreview.swift`

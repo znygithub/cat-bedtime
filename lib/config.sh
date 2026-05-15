@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TimeToSleep config manager — read/write ~/.timetosleep/config.json
+# Cat Bedtime config manager — read/write ~/.timetosleep/config.json
 
 ZZZ_DIR="$HOME/.timetosleep"
 ZZZ_CONFIG="$ZZZ_DIR/config.json"

@@ -76,9 +76,22 @@ enum LockWindowMath {
         return w == 1 ? 7 : w - 1
     }
 
+    static func activeWeekdayForLockWindow(config: SleepConfig, now: Date = Date()) -> Int {
+        let cal = Calendar.current
+        let comps = cal.dateComponents([.hour, .minute], from: now)
+        let nowMin = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
+        let bedMin = parseHHMM(config.bedtime) ?? 1380
+        let wakeMin = parseHHMM(config.wakeupTime) ?? 420
+        if bedMin > wakeMin && nowMin < wakeMin,
+           let previousDay = cal.date(byAdding: .day, value: -1, to: now) {
+            return isoWeekday(for: previousDay)
+        }
+        return isoWeekday(for: now)
+    }
+
     static func canEmergencyExit(config: SleepConfig, now: Date = Date()) -> Bool {
         if !isInLockdownWindow(config: config, now: now) { return true }
-        if !config.activeDays.contains(isoWeekday(for: now)) { return true }
+        if !config.activeDays.contains(activeWeekdayForLockWindow(config: config, now: now)) { return true }
         return false
     }
 

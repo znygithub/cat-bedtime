@@ -549,7 +549,7 @@ private final class PreviewAppDelegate: NSObject, NSApplicationDelegate {
     private func showPreviewWindows(targets: [ScreenTarget], style: NSWindow.StyleMask, snapshots: [NSImage?]) {
         for (index, target) in targets.enumerated() {
             let previewWindow = PreviewWindow(contentRect: target.frame, styleMask: style, backing: .buffered, defer: false)
-            previewWindow.title = "TimeToSleep Cat Video Preview"
+            previewWindow.title = "Cat Bedtime Video Preview"
             previewWindow.isOpaque = true
             previewWindow.backgroundColor = .black
             previewWindow.level = windowed ? .normal : .screenSaver
@@ -720,13 +720,7 @@ private func commandLineCGFloatValue(after flag: String) -> CGFloat? {
 }
 
 private func defaultVideoURL() -> URL? {
-    let candidates = [
-        "/Users/neil_lixiang/Downloads/《猫猫关灯睡觉》视频生成.mp4",
-    ]
-    guard let path = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
-        return nil
-    }
-    return URL(fileURLWithPath: path)
+    return nil
 }
 
 private let app = NSApplication.shared

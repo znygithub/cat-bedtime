@@ -1,31 +1,31 @@
-# TimeToSleep
+# Cat Bedtime
 
-> 没有什么事比睡觉更重要。
->
-> 早睡是好睡眠的前提，而大多数人晚睡的原因就是放不下电脑。但让人主动远离电脑，本身就是反人性的——那不如换个思路：到点了，电脑自己锁死。
->
-> 不需要你有多自律，不需要你"再看五分钟"。时间到了，屏幕黑了，今天就结束了。这才是顺应人性的做法。
+> 到点了，电脑借给猫猫睡觉。
 
-一个跑在终端里的早睡承诺装置。你和自己签一份契约，电脑替你守住底线。
+一个跑在 macOS 上的睡前锁屏工具。你设置猫猫每天几点来、几点走；时间到了，它会占住屏幕睡觉，你就该离开电脑了。
 
 [English](README_EN.md)
 
 ## 它做什么
 
-- **睡前提醒**：逐步降低屏幕亮度、降低音量、发送通知
-- **全面锁定**：全屏覆盖所有显示器，暂停媒体，静音
-- **无法逃出**：锁定后到起床时间前无法解锁，重启电脑也会立即重新锁定
-- **连续记录**：记录你的早睡连续天数和历史，锁屏界面上展示你的成就
+- **猫猫领养流程**：`zzz init` 会引导你设置猫猫来睡觉的时间、离开的时间、每周来住的日子，以及提前多久提醒。
+- **睡前提醒**：到点前逐步发送通知、降低亮度和音量，提醒你收拾工作。
+- **强制锁屏**：睡觉时间到后，全屏覆盖所有显示器、暂停媒体、静音；覆盖层被杀掉也会重新拉起。
+- **重启防绕过**：登录时如果仍在猫猫睡觉时段，会自动重新进入锁屏。
+- **到点恢复**：起床时间后退出锁屏，恢复亮度和音量，并记录猫猫来过。
+- **请假机制**：`zzz tonight off` 可以让猫猫今晚不来，需要留一句原因。
 
 ## 安装
 
 ```bash
-git clone https://github.com/znygithub/TimeToSleep.git
-cd TimeToSleep
+git clone https://github.com/znygithub/cat-bedtime.git
+cd cat-bedtime
 bash install.sh
 ```
 
-需要 macOS 11+，无需安装其他依赖。
+需要 macOS 和系统自带的 `python3`。日常安装不需要 Xcode、`jq` 或其他第三方依赖。
+
+运行时目录仍沿用早期项目名：`~/.timetosleep/`。这是为了兼容已有安装和 launchd 配置。
 
 ## 开始使用
 
@@ -33,33 +33,39 @@ bash install.sh
 zzz init
 ```
 
-交互式引导你完成设置：几点睡、几点起、哪几天启用、提前多久开始提醒。
+完成领养设置后，用下面的命令查看状态：
 
-## 命令
-
-```
-zzz              # 今晚状态 + 倒计时
-zzz status       # 详细统计
-zzz config       # 查看 / 修改设置
-zzz tonight off  # 跳过今晚（需要说明原因）
-zzz log          # 历史记录
-zzz test         # 测试锁屏（默认 glow，10 秒）
-zzz test cycle 8 # 依次预览 glow / orbit / seal 三种连续天数动效
-zzz uninstall    # 卸载
+```bash
+zzz
 ```
 
-## 设计原则
+## 常用命令
 
-- **锁定是绝对的。** 到起床时间前无法解除。重启电脑会立即重新锁定——没有后门。
-- **卸载是自由的，但会让你反思。** 卸载前展示你的连续天数和统计。不挽留，只是让你看一眼你积累了什么。
+```bash
+zzz                         # 今晚猫猫状态
+zzz init                    # 领养 / 重新设置
+zzz status                  # 猫猫到访记录
+zzz config                  # 查看猫猫日程
+zzz config bedtime 23:30    # 修改猫猫睡觉时间
+zzz config wakeup 07:30     # 修改猫猫离开时间
+zzz config winddown 30      # 修改提前提醒分钟数
+zzz tonight off             # 今晚不让猫猫来睡觉
+zzz log                     # 猫猫来访历史
+zzz test 10                 # 测试锁屏 10 秒
+zzz uninstall               # 卸载
+```
 
 ## 技术实现
 
-- `zzz` CLI（Shell 脚本）负责所有交互
-- Swift 预编译的全屏覆盖层（支持多显示器，arm64 + x86_64 通用二进制）
-- macOS `launchd` 定时调度 + 开机自检（防重启绕过）
-- `osascript` 控制媒体和系统通知
-- 配置存储在 `~/.timetosleep/`
+- `bin/zzz` 是 Shell CLI 入口。
+- `src/init.sh` 负责猫猫领养设置。
+- `src/daemon.sh` 编排睡前提醒、锁屏、唤醒恢复。
+- `src/bootcheck.sh` 负责登录后的锁屏时段自检。
+- `bin/zzz-overlay` 是预编译 Swift 全屏覆盖层，支持多显示器。
+- `launchd` 负责定时触发和开机自检。
+- 配置和记录存储在 `~/.timetosleep/config.json` 与 `~/.timetosleep/stats.json`。
+
+开发者可以从 [ARCHITECTURE.md](ARCHITECTURE.md) 了解模块结构；历史踩坑和回归风险保留在 [PITFALLS.md](PITFALLS.md)。
 
 ## 许可
 

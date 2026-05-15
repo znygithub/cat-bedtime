@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TimeToSleep launchd schedule manager
+# Cat Bedtime launchd schedule manager
 
 SCRIPT_DIR_SCHED="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR_SCHED/config.sh"

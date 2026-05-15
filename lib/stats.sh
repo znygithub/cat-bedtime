@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TimeToSleep stats tracker
+# Cat Bedtime stats tracker
 
 SCRIPT_DIR_STATS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR_STATS/config.sh"

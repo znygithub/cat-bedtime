@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TimeToSleep terminal UI toolkit
+# Cat Bedtime terminal UI toolkit
 
 # ── Colors & Styles ──────────────────────────────────────────────
 BOLD='\033[1m'
@@ -414,6 +414,6 @@ ui_moon() {
   ui_print "      ( o.o )"
   ui_print "       > ^ <"
   ui_print ""
-  ui_print "    ${BOLD}T i m e T o S l e e p${RESET}"
+  ui_print "    ${BOLD}C a t  B e d t i m e${RESET}"
   ui_print ""
 }

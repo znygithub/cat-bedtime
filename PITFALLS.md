@@ -1,4 +1,6 @@
-# 踩坑合集
+# 历史踩坑与回归风险
+
+这些记录保留给后续维护者。它们不是待办事项，而是已经修过、以后容易被改坏的地方。
 
 ## 1. macOS bash 3.2 + 中文退格删不动
 
@@ -84,4 +86,3 @@ end tell
 **补充** 到点退出的 `checkWakeTime` 必须检测「**刚才还在锁机窗 → 本秒已出窗**」再 `exit`；若误写成「只要当前不在锁机窗就 exit」，白天手动 `open` 测锁屏会约 1s 内被关，还容易被误以为「点一下屏就没了」。
 
 **补充2** 双击 ESC 不能只靠 local monitor。`NSApplication.ActivationPolicy.prohibited` + 普通 borderless window 可能拿不到键盘焦点，ESC 根本进不来。窗口需可成为 key/main window，content view 需接受 first responder，并用 `.accessory` 后主动 `activate`。
-

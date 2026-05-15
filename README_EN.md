@@ -1,31 +1,31 @@
-# TimeToSleep
+# Cat Bedtime
 
-> Nothing is more important than sleep.
->
-> Sleeping early is the foundation of good rest, yet most people stay up late because they can't put down their computer. But asking someone to willingly walk away from a screen — that's fighting human nature. So flip the script: when it's time, the computer locks itself.
->
-> No willpower required. No "just five more minutes." Time's up, screen goes dark, day's over. That's working *with* human nature, not against it.
+> When bedtime arrives, your Mac belongs to the cat.
 
-A terminal-based commitment device that locks your Mac at bedtime. You sign a contract with yourself — the computer enforces it.
+Cat Bedtime is a macOS bedtime lock screen. You decide when the cat comes over and when it leaves. At bedtime, it takes over the screen and sleeps there, which is your cue to step away from the computer.
 
 [中文](README.md)
 
-## What it does
+## What It Does
 
-- **Wind-down reminders**: Gradually dims screen, lowers volume, sends notifications before bedtime
-- **Full lockdown**: Fullscreen overlay covers all displays, pauses media, mutes audio
-- **No escape**: Cannot be dismissed until wake-up time — rebooting re-locks immediately
-- **Streak tracking**: Records your consecutive early-sleep days, displayed on the lock screen
+- **Cat adoption setup**: `zzz init` walks you through the cat's bedtime, wake-up time, active weekdays, and wind-down reminder window.
+- **Wind-down reminders**: Sends notifications and gradually lowers brightness and volume before bedtime.
+- **Full lock screen**: Covers all displays, pauses media, mutes audio, and relaunches the overlay if it is killed during the sleep window.
+- **Reboot protection**: On login, it checks whether the current time is still inside the lock window and re-locks if needed.
+- **Wake-up restore**: Exits at wake-up time, restores brightness and volume, and records the visit.
+- **Night off**: `zzz tonight off` lets you tell the cat not to come tonight, with a required reason.
 
 ## Install
 
 ```bash
-git clone https://github.com/znygithub/TimeToSleep.git
-cd TimeToSleep
+git clone https://github.com/znygithub/cat-bedtime.git
+cd cat-bedtime
 bash install.sh
 ```
 
-Requires macOS 11+, no other dependencies.
+Requires macOS and the system `python3`. Normal installation does not require Xcode, `jq`, or third-party packages.
+
+The runtime directory still uses the early project name: `~/.timetosleep/`. This keeps existing installs and launchd jobs compatible.
 
 ## Setup
 
@@ -33,33 +33,39 @@ Requires macOS 11+, no other dependencies.
 zzz init
 ```
 
-Interactive onboarding: set bedtime, wake-up time, active days, and how early to start reminding.
+After setup, check tonight's status with:
+
+```bash
+zzz
+```
 
 ## Commands
 
+```bash
+zzz                         # Tonight's cat status
+zzz init                    # Adopt / reconfigure
+zzz status                  # Cat visit stats
+zzz config                  # Show the cat schedule
+zzz config bedtime 23:30    # Change bedtime
+zzz config wakeup 07:30     # Change wake-up time
+zzz config winddown 30      # Change reminder lead time
+zzz tonight off             # Tell the cat not to come tonight
+zzz log                     # Visit history
+zzz test 10                 # Test the lock screen for 10 seconds
+zzz uninstall               # Uninstall
 ```
-zzz              # Tonight's status + countdown
-zzz status       # Detailed stats
-zzz config       # View / change settings
-zzz tonight off  # Skip tonight (must give a reason)
-zzz log          # History
-zzz test         # Test the lock screen (default glow style, 10 seconds)
-zzz test cycle 8 # Preview glow / orbit / seal streak animations in sequence
-zzz uninstall    # Remove everything
-```
 
-## Design principles
+## How It Works
 
-- **Lockdown is absolute.** No exit until wake-up time. Rebooting re-locks immediately — there is no backdoor.
-- **Uninstall is clean but reflective.** Shows your streak and stats before confirming. No guilt-tripping — just a moment to see what you've built.
+- `bin/zzz` is the shell CLI entrypoint.
+- `src/init.sh` handles the adoption flow.
+- `src/daemon.sh` orchestrates wind-down, lock screen, and wake-up restore.
+- `src/bootcheck.sh` handles login-time lock window checks.
+- `bin/zzz-overlay` is a precompiled Swift fullscreen overlay with multi-display support.
+- `launchd` schedules the nightly daemon and login boot check.
+- Config and history live in `~/.timetosleep/config.json` and `~/.timetosleep/stats.json`.
 
-## How it works
-
-- `zzz` CLI (shell scripts) for all interaction
-- Pre-compiled Swift fullscreen overlay (universal binary for arm64 + x86_64, covers all displays)
-- macOS `launchd` for scheduling + boot check (prevents restart bypass)
-- `osascript` for media control and notifications
-- Config stored in `~/.timetosleep/`
+Developers can read [ARCHITECTURE.md](ARCHITECTURE.md) for module details. Historical pitfalls and regression notes are kept in [PITFALLS.md](PITFALLS.md).
 
 ## License
 

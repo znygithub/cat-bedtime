@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TimeToSleep brightness controller
+# Cat Bedtime brightness controller
 
 # Get current brightness (0.0 - 1.0)
 brightness_get() {

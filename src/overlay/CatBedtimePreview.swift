@@ -774,7 +774,7 @@ private final class PreviewAppDelegate: NSObject, NSApplicationDelegate {
     private func showPreviewWindows(targets: [ScreenTarget], style: NSWindow.StyleMask, snapshots: [NSImage?]) {
         for (index, target) in targets.enumerated() {
             let previewWindow = PreviewWindow(contentRect: target.frame, styleMask: style, backing: .buffered, defer: false)
-            previewWindow.title = "TimeToSleep Cat Bedtime Preview"
+            previewWindow.title = "Cat Bedtime Preview"
             previewWindow.isOpaque = true
             previewWindow.backgroundColor = .black
             previewWindow.level = windowed ? .normal : .screenSaver

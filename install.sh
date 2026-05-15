@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TimeToSleep installer
+# Cat Bedtime installer
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -9,14 +9,14 @@ source "$SCRIPT_DIR/lib/ui.sh"
 clear 2>/dev/null || true
 ui_moon
 
-ui_print "  ${BOLD}安装 TimeToSleep${RESET}"
+ui_print "  ${BOLD}安装 Cat Bedtime${RESET}"
 ui_blank
 
 # ── 1. Check prerequisites ──
 ui_step "检查环境..."
 
 if [[ "$(uname)" != "Darwin" ]]; then
-  ui_error "TimeToSleep 目前只支持 macOS"
+  ui_error "Cat Bedtime 目前只支持 macOS"
   exit 1
 fi
 
@@ -63,7 +63,7 @@ if [ "$LINKED" = false ]; then
     if [ -f "$rc" ]; then
       if ! grep -q '.timetosleep/bin' "$rc" 2>/dev/null; then
         echo '' >> "$rc"
-        echo '# TimeToSleep' >> "$rc"
+        echo '# Cat Bedtime' >> "$rc"
         echo 'export PATH="$HOME/.timetosleep/bin:$PATH"' >> "$rc"
       fi
       LINKED=true
@@ -71,7 +71,7 @@ if [ "$LINKED" = false ]; then
     fi
   done
   if [ "$LINKED" = false ]; then
-    echo '# TimeToSleep' >> "$HOME/.zshrc"
+    echo '# Cat Bedtime' >> "$HOME/.zshrc"
     echo 'export PATH="$HOME/.timetosleep/bin:$PATH"' >> "$HOME/.zshrc"
     LINKED=true
   fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TimeToSleep boot check — runs at login, locks screen if within bedtime~wakeup window
+# Cat Bedtime boot check — runs at login, locks screen if within bedtime~wakeup window
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -19,21 +19,6 @@ WAKEUP=$(config_get "wakeup")
 if [ -z "$BEDTIME" ] || [ -z "$WAKEUP" ]; then
   log "Incomplete config, exiting."
   exit 0
-fi
-
-if ! is_active_today; then
-  log "Not an active day, exiting."
-  exit 0
-fi
-
-SKIP_FILE="$ZZZ_DIR/skip_tonight"
-if [ -f "$SKIP_FILE" ]; then
-  skip_date=$(cat "$SKIP_FILE")
-  today=$(date +%Y-%m-%d)
-  if [ "$skip_date" = "$today" ]; then
-    log "Tonight is skipped, exiting."
-    exit 0
-  fi
 fi
 
 now_min=$(now_minutes)
@@ -56,6 +41,27 @@ else
 fi
 
 if [ "$in_lockdown" = true ]; then
+  lock_date=$(date +%Y-%m-%d)
+  lock_weekday=$(date +%u)
+  if (( bed_min > wake_min && now_min < wake_min )); then
+    lock_date=$(date -v-1d +%Y-%m-%d)
+    lock_weekday=$(date -v-1d +%u)
+  fi
+
+  if ! config_get_array "days" | grep -q "^${lock_weekday}$"; then
+    log "Lock window belongs to inactive weekday ($lock_weekday), exiting."
+    exit 0
+  fi
+
+  SKIP_FILE="$ZZZ_DIR/skip_tonight"
+  if [ -f "$SKIP_FILE" ]; then
+    skip_date=$(head -n 1 "$SKIP_FILE" 2>/dev/null || true)
+    if [ "$skip_date" = "$lock_date" ]; then
+      log "Tonight is skipped, exiting."
+      exit 0
+    fi
+  fi
+
   log "Currently in lockdown window ($BEDTIME ~ $WAKEUP). Launching overlay."
 
   OVERLAY_BIN="$HOME/.timetosleep/bin/zzz-overlay"

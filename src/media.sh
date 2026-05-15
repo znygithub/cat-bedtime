@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TimeToSleep media controller — pause/resume, volume control
+# Cat Bedtime media controller — pause/resume, volume control
 
 media_pause_all() {
   # Spotify

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TimeToSleep daemon — orchestrates wind-down → lockdown → wake-up
+# Cat Bedtime daemon — orchestrates wind-down → lockdown → wake-up
 # Triggered by launchd at (bedtime - winddown_minutes)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -134,7 +134,7 @@ wind_down() {
   media_save_volume
 
   # First reminder: wind-down start (= "提前 N 分钟"，常见为 30 分钟)
-  notify "TimeToSleep" "猫猫还有 ${total_min} 分钟就要睡觉了"
+  notify "Cat Bedtime" "猫猫还有 ${total_min} 分钟就要睡觉了"
 
   local bed_min
   bed_min=$(time_to_minutes "$BEDTIME")
@@ -157,7 +157,7 @@ wind_down() {
   local remaining
   remaining=$(minutes_until "$BEDTIME")
   log "Wind-down stage 2: $remaining minutes remaining"
-  notify "TimeToSleep" "猫猫快要睡觉了，收拾一下吧"
+  notify "Cat Bedtime" "猫猫快要睡觉了，收拾一下吧"
   brightness_fade_to 0.6 10 &
 
   # Stage 2 → wait until stage 3 wall-clock time
@@ -169,7 +169,7 @@ wind_down() {
 
   remaining=$(minutes_until "$BEDTIME")
   log "Wind-down stage 3: $remaining minutes remaining"
-  notify "TimeToSleep" "猫猫马上要睡觉了！"
+  notify "Cat Bedtime" "猫猫马上要睡觉了！"
   media_fade_volume 50 &
   brightness_fade_to 0.3 10 &
 
@@ -182,7 +182,7 @@ wind_down() {
       log "Mac woke after bedtime window; aborting wind-down."
       brightness_restore; media_restore_volume; return 1
     fi
-    notify "TimeToSleep" "猫猫准备睡了，1 分钟后住进电脑"
+    notify "Cat Bedtime" "猫猫准备睡了，1 分钟后住进电脑"
   fi
 
   # Final wait until exact bedtime
@@ -256,7 +256,7 @@ wake_up() {
   # Disable Do Not Disturb
   shortcuts run "Turn Off Focus" 2>/dev/null || true
 
-  notify "TimeToSleep" "猫猫睡醒走啦，明晚再来。早安！"
+  notify "Cat Bedtime" "猫猫睡醒走啦，明晚再来。早安！"
 
   log "Daemon complete."
 }
