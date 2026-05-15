@@ -8,17 +8,93 @@ ITALIC='\033[3m'
 UNDERLINE='\033[4m'
 RESET='\033[0m'
 
-# Palette — muted, calming night tones
-C_PURPLE='\033[38;5;141m'
-C_BLUE='\033[38;5;111m'
-C_CYAN='\033[38;5;116m'
-C_GREEN='\033[38;5;114m'
-C_YELLOW='\033[38;5;222m'
-C_ORANGE='\033[38;5;216m'
-C_RED='\033[38;5;167m'
-C_GRAY='\033[38;5;245m'
-C_WHITE='\033[38;5;255m'
-C_DARK='\033[38;5;238m'
+# Palette — adapts to light and dark terminal backgrounds.
+_ui_bg_is_light_from_ansi() {
+  local bg="$1"
+  [[ "$bg" =~ ^[0-9]+$ ]] || return 1
+
+  if (( bg < 16 )); then
+    case "$bg" in
+      7|10|11|14|15) return 0 ;;
+      *) return 1 ;;
+    esac
+  fi
+
+  if (( bg >= 232 && bg <= 255 )); then
+    (( bg >= 244 ))
+    return
+  fi
+
+  if (( bg >= 16 && bg <= 231 )); then
+    local idx=$(( bg - 16 ))
+    local r=$(( idx / 36 ))
+    local g=$(( (idx % 36) / 6 ))
+    local b=$(( idx % 6 ))
+    local -a levels=(0 95 135 175 215 255)
+    local rv=${levels[$r]} gv=${levels[$g]} bv=${levels[$b]}
+    local brightness=$(( (rv * 299 + gv * 587 + bv * 114) / 1000 ))
+    (( brightness >= 160 ))
+    return
+  fi
+
+  return 1
+}
+
+_ui_bg_is_light_from_terminal_app() {
+  [ "${TERM_PROGRAM:-}" = "Apple_Terminal" ] || return 1
+  command -v osascript >/dev/null 2>&1 || return 1
+  local rgb
+  rgb=$(osascript 2>/dev/null <<'APPLESCRIPT'
+tell application "Terminal"
+  if (count of windows) is 0 then error "no terminal window"
+  set c to background color of selected tab of front window
+  return (item 1 of c as text) & "," & (item 2 of c as text) & "," & (item 3 of c as text)
+end tell
+APPLESCRIPT
+  ) || return 1
+  [[ "$rgb" =~ ^([0-9]+),([0-9]+),([0-9]+)$ ]] || return 1
+  local r=${BASH_REMATCH[1]} g=${BASH_REMATCH[2]} b=${BASH_REMATCH[3]}
+  local brightness=$(( (r * 299 + g * 587 + b * 114) / 1000 ))
+  (( brightness >= 32768 ))
+}
+
+_ui_bg_is_light() {
+  case "${CAT_BEDTIME_THEME:-}" in
+    light) return 0 ;;
+    dark) return 1 ;;
+  esac
+
+  if [ -n "${COLORFGBG:-}" ]; then
+    _ui_bg_is_light_from_ansi "${COLORFGBG##*;}" && return 0
+    return 1
+  fi
+
+  _ui_bg_is_light_from_terminal_app
+}
+
+if _ui_bg_is_light; then
+  C_PURPLE='\033[38;5;90m'
+  C_BLUE='\033[38;5;25m'
+  C_CYAN='\033[38;5;31m'
+  C_GREEN='\033[38;5;28m'
+  C_YELLOW='\033[38;5;130m'
+  C_ORANGE='\033[38;5;166m'
+  C_RED='\033[38;5;124m'
+  C_GRAY='\033[38;5;240m'
+  C_WHITE='\033[38;5;232m'
+  C_DARK='\033[38;5;245m'
+else
+  C_PURPLE='\033[38;5;141m'
+  C_BLUE='\033[38;5;111m'
+  C_CYAN='\033[38;5;116m'
+  C_GREEN='\033[38;5;114m'
+  C_YELLOW='\033[38;5;222m'
+  C_ORANGE='\033[38;5;216m'
+  C_RED='\033[38;5;167m'
+  C_GRAY='\033[38;5;245m'
+  C_WHITE='\033[38;5;255m'
+  C_DARK='\033[38;5;238m'
+fi
 
 # ── Basic output ─────────────────────────────────────────────────
 ui_print() { printf "%b\n" "$*"; }
@@ -391,7 +467,7 @@ ui_type_confirm() {
       return 0
     fi
     if (( try < max_tries )); then
-      ui_error "输入不匹配，请完整输入上面黄色的文字"
+      ui_error "输入不匹配，请完整输入上面的确认文字"
     fi
   done
   return 1
