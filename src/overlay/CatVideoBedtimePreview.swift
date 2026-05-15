@@ -300,6 +300,9 @@ private final class CatVideoBedtimePreviewView: NSView {
             drawDesktop()
             drawLightsOutOverlay(time: videoTime)
             drawAlphaVideo(alpha: 1.0)
+            // After lights go dark, fade in the lock screen text
+            let textAlpha = easeOutQuart(progress(videoTime, start: lightsOutAt + lightsOutDuration + 1.0, duration: 1.2))
+            drawLockText(alpha: CGFloat(textAlpha))
             drawPreviewHint(alpha: 0.28)
             return
         }
@@ -430,28 +433,49 @@ private final class CatVideoBedtimePreviewView: NSView {
 
     private func drawLockText(alpha: CGFloat) {
         guard alpha > 0.01 else { return }
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = .center
+        let leftPS = NSMutableParagraphStyle()
+        leftPS.alignment = .left
 
+        let margin: CGFloat = bounds.width * 0.05
+        let textWidth: CGFloat = bounds.width * 0.5
+
+        // ── Clock (top-left, large) ──
+        let fontSize: CGFloat = min(108, bounds.width * 0.115)
         let timeAttrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.monospacedDigitSystemFont(ofSize: min(104, bounds.width * 0.112), weight: .light),
-            .foregroundColor: NSColor(srgbRed: 0.96, green: 0.88, blue: 0.70, alpha: 0.90 * alpha),
-            .kern: 2.0,
-            .paragraphStyle: paragraph,
+            .font: NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .thin),
+            .foregroundColor: NSColor(white: 1.0, alpha: 0.88 * alpha),
+            .paragraphStyle: leftPS,
         ]
+        let clockY = bounds.height * 0.82
         NSAttributedString(string: currentTimeString(), attributes: timeAttrs)
-            .draw(in: NSRect(x: bounds.minX, y: bounds.midY + bounds.height * 0.19, width: bounds.width, height: 128))
+            .draw(in: NSRect(x: margin, y: clockY, width: textWidth, height: fontSize * 1.3))
 
-        let titleAttrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: min(26, bounds.width * 0.024), weight: .medium),
-            .foregroundColor: NSColor(srgbRed: 1.0, green: 0.81, blue: 0.50, alpha: 0.86 * alpha),
-            .paragraphStyle: paragraph,
+        // ── Quote ──
+        let quoteAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 20, weight: .regular),
+            .foregroundColor: NSColor(white: 1.0, alpha: 0.65 * alpha),
+            .kern: 2.0,
+            .paragraphStyle: leftPS,
         ]
-        NSAttributedString(string: "猫猫睡着了。电脑被它占用了。", attributes: titleAttrs)
-            .draw(in: NSRect(x: bounds.minX + bounds.width * 0.12,
-                             y: bounds.midY + bounds.height * 0.12,
-                             width: bounds.width * 0.76,
-                             height: 42))
+        NSAttributedString(string: "嘘🤫，猫猫睡了，安静", attributes: quoteAttrs)
+            .draw(in: NSRect(x: margin, y: clockY - 40, width: textWidth, height: 36))
+
+        // ── Wakeup info ──
+        let configPath = NSHomeDirectory() + "/.timetosleep/config.json"
+        var wakeupStr = "07:00"
+        if let data = try? Data(contentsOf: URL(fileURLWithPath: configPath)),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let w = json["wakeup"] as? String { wakeupStr = w }
+        let wakeHour = Int(wakeupStr.split(separator: ":").first ?? "7") ?? 7
+
+        let infoAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 17, weight: .light),
+            .foregroundColor: NSColor(white: 1.0, alpha: 0.38 * alpha),
+            .kern: 1.5,
+            .paragraphStyle: leftPS,
+        ]
+        NSAttributedString(string: "猫猫\(wakeHour)点起床", attributes: infoAttrs)
+            .draw(in: NSRect(x: margin, y: clockY - 72, width: textWidth, height: 28))
     }
 
     private func drawPreviewHint(alpha: CGFloat) {

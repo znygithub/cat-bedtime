@@ -84,7 +84,7 @@ ui_blank
 ui_box "$(printf '%b\n' \
   "${C_GREEN}${BOLD}安装完成！${RESET}" \
   "" \
-  "即将进入早睡契约设置...")"
+  "即将进入猫猫领养设置...")"
 ui_blank
 
 sleep 1

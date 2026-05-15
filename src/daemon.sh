@@ -38,11 +38,16 @@ fi
 # ── Check for skip ───────────────────────────────────────────────
 SKIP_FILE="$ZZZ_DIR/skip_tonight"
 if [ -f "$SKIP_FILE" ]; then
-  skip_date=$(cat "$SKIP_FILE")
+  skip_date=$(head -n 1 "$SKIP_FILE" 2>/dev/null || true)
+  skip_reason=$(sed -n '2p' "$SKIP_FILE" 2>/dev/null || true)
   today=$(date +%Y-%m-%d)
   if [ "$skip_date" = "$today" ]; then
     log "Tonight is skipped by user request."
-    stats_record "$today" "skipped"
+    if [ -n "$skip_reason" ]; then
+      stats_record "$today" "skipped:$skip_reason"
+    else
+      stats_record "$today" "skipped"
+    fi
     rm -f "$SKIP_FILE"
     exit 0
   fi
@@ -129,7 +134,7 @@ wind_down() {
   media_save_volume
 
   # First reminder: wind-down start (= "提前 N 分钟"，常见为 30 分钟)
-  notify "TimeToSleep" "睡前提醒：还有 ${total_min} 分钟就要锁定了，准备休息吧"
+  notify "TimeToSleep" "猫猫还有 ${total_min} 分钟就要睡觉了"
 
   local bed_min
   bed_min=$(time_to_minutes "$BEDTIME")
@@ -152,7 +157,7 @@ wind_down() {
   local remaining
   remaining=$(minutes_until "$BEDTIME")
   log "Wind-down stage 2: $remaining minutes remaining"
-  notify "TimeToSleep" "还有 ${remaining} 分钟锁定，保存你的工作"
+  notify "TimeToSleep" "猫猫快要睡觉了，收拾一下吧"
   brightness_fade_to 0.6 10 &
 
   # Stage 2 → wait until stage 3 wall-clock time
@@ -164,7 +169,7 @@ wind_down() {
 
   remaining=$(minutes_until "$BEDTIME")
   log "Wind-down stage 3: $remaining minutes remaining"
-  notify "TimeToSleep" "⚠️ ${remaining} 分钟后锁定！"
+  notify "TimeToSleep" "猫猫马上要睡觉了！"
   media_fade_volume 50 &
   brightness_fade_to 0.3 10 &
 
@@ -177,7 +182,7 @@ wind_down() {
       log "Mac woke after bedtime window; aborting wind-down."
       brightness_restore; media_restore_volume; return 1
     fi
-    notify "TimeToSleep" "还有 1 分钟就要锁定了，请尽快收尾"
+    notify "TimeToSleep" "猫猫准备睡了，1 分钟后住进电脑"
   fi
 
   # Final wait until exact bedtime
@@ -251,14 +256,7 @@ wake_up() {
   # Disable Do Not Disturb
   shortcuts run "Turn Off Focus" 2>/dev/null || true
 
-  # Show streak
-  local streak
-  streak=$(stats_streak)
-  if (( streak > 0 )); then
-    notify "TimeToSleep" "早安！你已经连续早睡 ${streak} 天了 🌅"
-  else
-    notify "TimeToSleep" "早安！新的一天开始了 🌅"
-  fi
+  notify "TimeToSleep" "猫猫睡醒走啦，明晚再来。早安！"
 
   log "Daemon complete."
 }

@@ -98,11 +98,20 @@ ui_input() {
   local prompt="$1" var_name="$2" default="$3"
 
   ui_blank
-  local _rp="  $(_rl "$C_PURPLE")?$(_rl "$RESET") $(_rl "$BOLD")$prompt$(_rl "$RESET")"
-  [ -n "$default" ] && _rp+=" $(_rl "$DIM")($default)$(_rl "$RESET")"
-  _rp+=" $(_rl "$C_GRAY")›$(_rl "$RESET") "
+  local prompt_plain="  ${C_PURPLE}?${RESET} ${BOLD}$prompt${RESET}"
+  [ -n "$default" ] && prompt_plain+=" ${DIM}($default)${RESET}"
+  prompt_plain+=" ${C_GRAY}›${RESET} "
+
   local answer
-  read -e -r -p "$_rp" answer
+  if [ -t 0 ]; then
+    local _rp="  $(_rl "$C_PURPLE")?$(_rl "$RESET") $(_rl "$BOLD")$prompt$(_rl "$RESET")"
+    [ -n "$default" ] && _rp+=" $(_rl "$DIM")($default)$(_rl "$RESET")"
+    _rp+=" $(_rl "$C_GRAY")›$(_rl "$RESET") "
+    read -e -r -p "$_rp" answer || answer=""
+  else
+    ui_print_n "$prompt_plain"
+    read -r answer || answer=""
+  fi
   [ -z "$answer" ] && answer="$default"
   eval "$var_name='$answer'"
 }
@@ -214,10 +223,10 @@ ui_multiselect() {
   ui_print "  ${C_PURPLE}?${RESET} ${BOLD}$prompt${RESET}  ${DIM}(空格切换, 回车确认)${RESET}"
 
   # save cursor position
-  tput sc 2>/dev/null
+  tput sc 2>/dev/null || true
 
   _ms_draw() {
-    tput rc 2>/dev/null
+    tput rc 2>/dev/null || true
     for (( i=0; i<count; i++ )); do
       local check=" "
       [ "${selected[$i]}" = "1" ] && check="${C_GREEN}✓${RESET}"
@@ -233,17 +242,17 @@ ui_multiselect() {
 
   # initial draw
   for (( i=0; i<count; i++ )); do echo; done
-  tput sc 2>/dev/null
-  tput cuu $count 2>/dev/null
-  tput sc 2>/dev/null
+  tput sc 2>/dev/null || true
+  tput cuu $count 2>/dev/null || true
+  tput sc 2>/dev/null || true
   _ms_draw
 
   while true; do
     local key
-    IFS= read -rsn1 key
+    IFS= read -rsn1 key || key=""
     case "$key" in
       $'\x1b')
-        read -rsn2 rest
+        read -rsn2 rest || rest=""
         case "$rest" in
           '[A') (( cursor > 0 )) && (( cursor-- )) ;;  # up
           '[B') (( cursor < count-1 )) && (( cursor++ )) ;;  # down
@@ -300,12 +309,12 @@ ui_select() {
   ui_print "  ${C_PURPLE}?${RESET} ${BOLD}$prompt${RESET}  ${DIM}(↑↓选择, 回车确认)${RESET}"
 
   for (( i=0; i<count; i++ )); do echo; done
-  tput sc 2>/dev/null
-  tput cuu $count 2>/dev/null
-  tput sc 2>/dev/null
+  tput sc 2>/dev/null || true
+  tput cuu $count 2>/dev/null || true
+  tput sc 2>/dev/null || true
 
   _ss_draw() {
-    tput rc 2>/dev/null
+    tput rc 2>/dev/null || true
     for (( i=0; i<count; i++ )); do
       if [ $i -eq $cursor ]; then
         ui_print "  ${C_CYAN}❯${RESET} ${BOLD}${labels[$i]}${RESET}"
@@ -319,10 +328,10 @@ ui_select() {
 
   while true; do
     local key
-    IFS= read -rsn1 key
+    IFS= read -rsn1 key || key=""
     case "$key" in
       $'\x1b')
-        read -rsn2 rest
+        read -rsn2 rest || rest=""
         case "$rest" in
           '[A') (( cursor > 0 )) && (( cursor-- )) ;;
           '[B') (( cursor < count-1 )) && (( cursor++ )) ;;
@@ -345,7 +354,7 @@ ui_confirm() {
 
   ui_print_n "  ${C_PURPLE}?${RESET} ${BOLD}$prompt${RESET} ${DIM}($hint)${RESET} ${C_GRAY}›${RESET} "
   local answer
-  read -rn1 answer
+  read -rn1 answer || answer=""
   echo
   [ -z "$answer" ] && answer="$default"
   [[ "$answer" =~ ^[Yy]$ ]]
@@ -366,9 +375,14 @@ ui_type_confirm() {
     fi
     ui_print "  ${DIM}请输入：${RESET}${C_YELLOW}$phrase${RESET}"
     ui_blank
-    local _rp="  $(_rl "$C_GRAY")›$(_rl "$RESET") "
     local answer
-    read -e -r -p "$_rp" answer
+    if [ -t 0 ]; then
+      local _rp="  $(_rl "$C_GRAY")›$(_rl "$RESET") "
+      read -e -r -p "$_rp" answer || answer=""
+    else
+      ui_print_n "  ${C_GRAY}›${RESET} "
+      read -r answer || answer=""
+    fi
     # normalize: collapse all whitespace
     local norm_answer norm_phrase
     norm_answer=$(echo "$answer" | tr -s '[:space:]' ' ' | sed 's/^ *//;s/ *$//')
@@ -393,10 +407,12 @@ ui_countdown() {
   printf "\r  ${C_GREEN}✓${RESET} %-40s\n" "$msg"
 }
 
-# Moon ASCII art
+# Cat ASCII art
 ui_moon() {
-  ui_print "${C_PURPLE}"
-  ui_print "        🌙"
+  ui_print "${C_YELLOW}"
+  ui_print "       /\\_/\\"
+  ui_print "      ( o.o )"
+  ui_print "       > ^ <"
   ui_print ""
   ui_print "    ${BOLD}T i m e T o S l e e p${RESET}"
   ui_print ""

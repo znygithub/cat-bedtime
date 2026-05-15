@@ -13,26 +13,28 @@ run_init() {
   ui_moon
 
   ui_box "$(printf '%b\n' \
-    "${BOLD}你即将和自己签一份早睡契约。${RESET}" \
+    "${BOLD}你打算领养这只小猫吗？${RESET}" \
     "" \
-    "从今天起，到了约定的时间，" \
-    "电脑会替你守住这份约定。" \
+    "每天到了约定时间，" \
+    "它都会住进你的电脑。" \
     "" \
-    "${DIM}锁定后到起床前，无法解锁。${RESET}")"
+    "为了保证它的睡眠，" \
+    "你就不能使用电脑了哦。")"
 
   sleep 1
 
   # ── bedtime ──
   local bedtime
-  ui_input_time "你想几点睡觉？" bedtime "23:00"
+  ui_dim "千万不要太晚哦，猫猫也需要一个好睡眠。"
+  ui_input_time "猫猫几点才能睡觉？" bedtime "23:00"
 
   # ── wakeup ──
   local wakeup
-  ui_input_time "你想几点起床？" wakeup "07:00"
+  ui_input_time "猫猫早上几点走？" wakeup "07:00"
 
   # ── active days ──
   local days_csv
-  ui_multiselect "哪几天启用？" days_csv \
+  ui_multiselect "猫猫每周几可以来睡觉？" days_csv \
     "周一:1:selected" \
     "周二:2:selected" \
     "周三:3:selected" \
@@ -40,10 +42,11 @@ run_init() {
     "周五:5:selected" \
     "周六:6" \
     "周日:7"
+  ui_dim "其他日子猫猫自己在外面浪。"
 
   # ── wind-down ──
   local winddown
-  ui_select "提前多久开始提醒？" winddown \
+  ui_select "提前多久提醒你准备让猫猫睡觉？" winddown \
     "15 分钟:15" \
     "30 分钟:30" \
     "45 分钟:45" \
@@ -61,18 +64,18 @@ run_init() {
   done
 
   ui_box "$(printf '%b\n' \
-    "${BOLD}${C_PURPLE}你的早睡契约${RESET}" \
+    "${BOLD}${C_PURPLE}领养协议${RESET}" \
     "" \
-    "  睡觉：${BOLD}$bedtime${RESET}    起床：${BOLD}$wakeup${RESET}" \
-    "  启用：${BOLD}$days_display${RESET}" \
-    "  提前 ${BOLD}$winddown 分钟${RESET}开始提醒" \
+    "  猫猫睡觉：${BOLD}$bedtime${RESET}    猫猫离开：${BOLD}$wakeup${RESET}" \
+    "  来睡日子：${BOLD}$days_display${RESET}" \
+    "  提前 ${BOLD}$winddown 分钟${RESET}提醒你准备" \
     "" \
-    "  ${C_RED}锁定后到起床前，无法解锁。${RESET}")"
+    "  ${C_RED}我愿意遵守承诺让猫猫好好休息。${RESET}")"
 
   ui_blank
 
   # ── activation phrase (type-to-confirm) ──
-  if ! ui_type_confirm "最后一步：请键入下面这句以激活：" "和晚睡说再见"; then
+  if ! ui_type_confirm "最后一步：请键入下面这句完成领养协议：" "我愿意遵守承诺让猫猫好好休息"; then
     ui_blank
     ui_error "未正确输入，设置已取消。"
     ui_dim "想好了再来：zzz init"
@@ -118,10 +121,11 @@ ENDJSON
 
   ui_blank
   ui_box "$(printf '%b\n' \
-    "${C_GREEN}${BOLD}设置完成！${RESET}" \
+    "${C_GREEN}${BOLD}领养完成！${RESET}" \
     "" \
-    "今晚 ${BOLD}$bedtime${RESET} 你的电脑将开始锁定。" \
-    "提前 ${BOLD}$winddown 分钟${RESET}会收到提醒。" \
+    "猫猫已经记住你家地址了。" \
+    "今晚 ${BOLD}$bedtime${RESET}，它会住进你的电脑睡觉。" \
+    "提前 ${BOLD}$winddown 分钟${RESET}，会提醒你准备让它休息。" \
     "" \
     "${DIM}输入 zzz 查看今晚状态${RESET}")"
   ui_blank
