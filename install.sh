@@ -33,11 +33,15 @@ ui_step "创建安装目录..."
 mkdir -p "$INSTALL_DIR/bin"
 mkdir -p "$INSTALL_DIR/lib"
 mkdir -p "$INSTALL_DIR/src"
+mkdir -p "$INSTALL_DIR/assets"
 
 # ── 3. Copy files ──
 ui_step "安装文件..."
 cp -r "$SCRIPT_DIR/lib/"* "$INSTALL_DIR/lib/"
 cp -r "$SCRIPT_DIR/src/"* "$INSTALL_DIR/src/"
+if [ -d "$SCRIPT_DIR/assets" ]; then
+  cp -r "$SCRIPT_DIR/assets/"* "$INSTALL_DIR/assets/" 2>/dev/null || true
+fi
 cp "$SCRIPT_DIR/bin/zzz" "$INSTALL_DIR/bin/zzz"
 cp "$SCRIPT_DIR/bin/zzz-overlay" "$INSTALL_DIR/bin/zzz-overlay"
 chmod +x "$INSTALL_DIR/bin/zzz"

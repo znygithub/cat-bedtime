@@ -5,3 +5,7 @@
 
 # Cursor IDE
 .cursor/
+
+# Local heavyweight animation assets
+assets/*.mov
+assets/*.mp4

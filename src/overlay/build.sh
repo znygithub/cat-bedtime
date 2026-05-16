@@ -12,12 +12,12 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 swiftc -O -target arm64-apple-macos11 \
   -o "$TMP_DIR/zzz-overlay.arm64" \
-  -framework Cocoa -framework CoreGraphics \
+  -framework AVFoundation -framework Cocoa -framework CoreGraphics -framework CoreImage -framework QuartzCore \
   "$SCRIPT_DIR/LockScreen.swift"
 
 swiftc -O -target x86_64-apple-macos11 \
   -o "$TMP_DIR/zzz-overlay.x86_64" \
-  -framework Cocoa -framework CoreGraphics \
+  -framework AVFoundation -framework Cocoa -framework CoreGraphics -framework CoreImage -framework QuartzCore \
   "$SCRIPT_DIR/LockScreen.swift"
 
 lipo -create -output "$OUTPUT" \

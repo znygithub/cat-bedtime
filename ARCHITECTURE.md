@@ -21,7 +21,7 @@ cat-bedtime/
 │   ├── media.sh            # 暂停媒体、保存 / 恢复音量
 │   ├── brightness.sh       # 保存 / 恢复 / 渐变亮度
 │   └── overlay/
-│       ├── LockScreen.swift              # 正式锁屏覆盖层
+│       ├── LockScreen.swift              # 正式视频猫猫锁屏覆盖层
 │       ├── build.sh                      # 编译正式覆盖层
 │       ├── CatBedtimePreview.swift       # 手绘猫猫动效预览
 │       ├── build-cat-bedtime-preview.sh  # 手绘预览编译脚本
@@ -43,6 +43,7 @@ cat-bedtime/
 ├── bin/                    # 安装后的 zzz 和 zzz-overlay
 ├── lib/                    # 安装后的库脚本
 ├── src/                    # 安装后的运行脚本
+├── assets/                 # 猫猫锁屏视频素材
 ├── config.json             # 猫猫日程配置
 ├── stats.json              # 到访 / 请假记录
 ├── saved_brightness        # 锁屏前亮度备份
@@ -113,11 +114,11 @@ cat-bedtime/
 - 使用 `CGShieldingWindowLevel + 1` 保持在大多数窗口之上。
 - 每 2 秒重置窗口层级和大小。
 - 监听显示器变化并重建窗口。
-- 显示当前时间、猫猫口吻文案、醒来倒计时和“猫猫早上 HH:MM 走”。
+- 从 `~/.timetosleep/assets/cat-bedtime.mov` 读取透明猫猫视频。
+- 渲染猫猫出现、关灯、睡下的正式动画效果。
+- 关灯后在左上角显示时间、猫猫文案和醒来倒计时。
 - 到起床窗口后自动退出。
 - 支持异常逃生：短时间内连按两下 ESC 会重新读取配置；只有当前不在锁屏窗口或今天不是启用日时才退出。
-
-`SleepStats` 仍保留在 Swift 代码中，主要为未来宠物成长系统预留；当前正式锁屏不展示 streak 动效。
 
 ### 6. 预览程序
 
@@ -126,7 +127,7 @@ cat-bedtime/
 - 手绘预览用于验证猫猫走动、拉灯、上床睡觉的纯代码动效。
 - 视频预览用于验证透明视频 / 绿幕 / 黑底素材与真实桌面截图的合成。
 
-这些文件是可继续实验的素材管线，不代表当前正式锁屏一定包含视频猫猫动画。
+这些文件是可继续实验的素材管线；正式锁屏入口已经在 `LockScreen.swift` 中使用视频猫猫效果。
 
 ## launchd
 
