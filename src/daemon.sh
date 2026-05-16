@@ -29,12 +29,6 @@ if ! [[ "${WINDDOWN:-}" =~ ^[0-9]+$ ]] || (( WINDDOWN < 1 )); then
   WINDDOWN=30
 fi
 
-# ── Check if today is an active day ──────────────────────────────
-if ! is_active_today; then
-  log "Today is not an active day, exiting."
-  exit 0
-fi
-
 # ── Check for skip ───────────────────────────────────────────────
 SKIP_FILE="$ZZZ_DIR/skip_tonight"
 if [ -f "$SKIP_FILE" ]; then
@@ -60,18 +54,43 @@ log "Starting wind-down sequence. Bedtime: $BEDTIME, Wake: $WAKEUP, Winddown: ${
 OVERLAY_BIN="$HOME/.timetosleep/bin/zzz-overlay"
 [ ! -x "$OVERLAY_BIN" ] && OVERLAY_BIN="$ROOT_DIR/bin/zzz-overlay"
 
-# ── Helper: send macOS notification (argv avoids quoting bugs with CJK / emoji) ──
+# ── Helper: center-screen informational alert (argv avoids quoting bugs with CJK) ──
+# Args: title, subtitle (may be empty), body lines, primary button label.
+# We do NOT use `display notification`: that banner shows osascript's default
+# "blue folder" icon and a "--" app-name placeholder (osascript has no bundle
+# identity), which looks broken. The center-screen `display alert` has no
+# icon at all and reads cleanly. Subtitle (if any) is promoted to the first
+# line of the alert message — it becomes the visually emphasized key-data
+# line above the prose body.
 notify() {
-  local title="$1" body="$2" err
-  err=$(
-    osascript -l AppleScript - -- "$title" "$body" <<'APPLESCRIPT' 2>&1
+  local title="$1" subtitle="$2" body="$3" button="$4" output status
+  # NOTE: do not pass `--` between `-` and the script's args. macOS osascript
+  # treats `--` as a regular argv entry (not an end-of-options separator), so
+  # it would land as `item 1 of argv` and shift every following slot by one —
+  # the title becomes "--", the button label gets the body text, etc. (Symptom:
+  # a centered alert sheet whose blue button reads "收尾这一小段就好。" instead
+  # of "知道啦".)
+  output=$(
+    osascript -l AppleScript - "$title" "$subtitle" "$body" "$button" <<'APPLESCRIPT' 2>&1
 on run argv
-  display notification (item 2 of argv) with title (item 1 of argv) sound name "default"
+  set dlgTitle to item 1 of argv
+  set dlgSub to item 2 of argv
+  set dlgBody to item 3 of argv
+  set dlgBtn to item 4 of argv
+  if dlgSub is "" then
+    set alertBody to dlgBody
+  else
+    set alertBody to dlgSub & linefeed & linefeed & dlgBody
+  end if
+  display alert dlgTitle message alertBody as informational buttons {dlgBtn} default button dlgBtn giving up after 12
 end run
 APPLESCRIPT
   )
-  if [ -n "$err" ]; then
-    log "notify osascript: $err"
+  status=$?
+  if (( status != 0 )); then
+    log "notify osascript failed ($status): $output"
+  else
+    log "notify sent: ${title//$'\n'/ } — ${subtitle:-∅}"
   fi
 }
 
@@ -84,6 +103,30 @@ minutes_until() {
   local diff=$(( target_min - now_min ))
   (( diff < 0 )) && (( diff += 1440 ))
   echo $diff
+}
+
+# ── Helper: which weekday this wind-down run belongs to ──────────
+# If bedtime is just after midnight, wind-down can start on the previous
+# calendar day. Active-day checks should use the bedtime date, not the
+# notification date.
+active_weekday_for_winddown() {
+  local now_min bed_min start_min
+  now_min=$(now_minutes)
+  bed_min=$(time_to_minutes "$BEDTIME")
+  start_min=$(( bed_min - WINDDOWN ))
+  (( start_min < 0 )) && (( start_min += 1440 ))
+
+  if (( start_min > bed_min && now_min >= start_min )); then
+    date -v+1d +%u
+  else
+    date +%u
+  fi
+}
+
+is_active_winddown_day() {
+  local active_weekday
+  active_weekday=$(active_weekday_for_winddown)
+  config_get_array "days" | grep -q "^${active_weekday}$"
 }
 
 # ── Helper: check if Mac slept through the night ────────────────
@@ -129,12 +172,21 @@ wind_down() {
   local total_min=$WINDDOWN
   log "Wind-down phase starting ($total_min minutes until lockdown)"
 
+  # First reminder: wind-down start (= "提前 N 分钟"，常见为 30 分钟)
+  notify \
+    $'\xf0\x9f\x90\xbe  猫猫开始打哈欠了' \
+    "还有 ${total_min} 分钟到关灯" \
+    $'收尾这一小段就好。' \
+    "知道啦"
+
+  if ! is_active_winddown_day; then
+    log "Reminder sent; wind-down belongs to inactive weekday ($(active_weekday_for_winddown)), skipping lockdown."
+    return 2
+  fi
+
   # Save current state for later restore
   brightness_save
   media_save_volume
-
-  # First reminder: wind-down start (= "提前 N 分钟"，常见为 30 分钟)
-  notify "Cat Bedtime" "猫猫还有 ${total_min} 分钟就要睡觉了"
 
   local bed_min
   bed_min=$(time_to_minutes "$BEDTIME")
@@ -154,10 +206,13 @@ wind_down() {
     brightness_restore; media_restore_volume; return 1
   fi
 
+  # Stage 2 and stage 3 used to send popups too, but per product feedback
+  # users only get two notifications: T-15min (above) and T-1min (below).
+  # Brightness and volume still taper here so the room "matches" the cat's
+  # mood — just without interrupting with another modal sheet.
   local remaining
   remaining=$(minutes_until "$BEDTIME")
-  log "Wind-down stage 2: $remaining minutes remaining"
-  notify "Cat Bedtime" "猫猫快要睡觉了，收拾一下吧"
+  log "Wind-down stage 2 (silent): $remaining minutes remaining"
   brightness_fade_to 0.6 10 &
 
   # Stage 2 → wait until stage 3 wall-clock time
@@ -168,8 +223,7 @@ wind_down() {
   fi
 
   remaining=$(minutes_until "$BEDTIME")
-  log "Wind-down stage 3: $remaining minutes remaining"
-  notify "Cat Bedtime" "猫猫马上要睡觉了！"
+  log "Wind-down stage 3 (silent): $remaining minutes remaining"
   media_fade_volume 50 &
   brightness_fade_to 0.3 10 &
 
@@ -182,7 +236,11 @@ wind_down() {
       log "Mac woke after bedtime window; aborting wind-down."
       brightness_restore; media_restore_volume; return 1
     fi
-    notify "Cat Bedtime" "猫猫准备睡了，1 分钟后住进电脑"
+    notify \
+      $'\xf0\x9f\x92\xa4  它要去拉灯绳了' \
+      "一分钟后锁屏" \
+      $'手头的按个保存就好，今天到这。' \
+      "好"
   fi
 
   # Final wait until exact bedtime
@@ -256,15 +314,25 @@ wake_up() {
   # Disable Do Not Disturb
   shortcuts run "Turn Off Focus" 2>/dev/null || true
 
-  notify "Cat Bedtime" "猫猫睡醒走啦，明晚再来。早安！"
+  # No wake-up popup: at this point the overlay has already exited, the user
+  # is either still asleep or just opened the lid — neither moment benefits
+  # from a modal sheet. Brightness/volume are silently restored above.
 
   log "Daemon complete."
 }
 
 # ── Main sequence ────────────────────────────────────────────────
-if wind_down; then
-  lockdown
-  wake_up
-else
-  log "Wind-down aborted (Mac slept through bedtime window). Skipping lockdown."
-fi
+wind_down
+wind_down_status=$?
+case "$wind_down_status" in
+  0)
+    lockdown
+    wake_up
+    ;;
+  2)
+    log "Wind-down skipped after reminder because this sleep day is inactive."
+    ;;
+  *)
+    log "Wind-down aborted (Mac slept through bedtime window). Skipping lockdown."
+    ;;
+esac

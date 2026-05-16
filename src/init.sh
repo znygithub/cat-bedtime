@@ -45,12 +45,10 @@ run_init() {
   ui_dim "其他日子猫猫自己在外面浪。"
 
   # ── wind-down ──
-  local winddown
-  ui_select "提前多久提醒你准备让猫猫睡觉？" winddown \
-    "15 分钟:15" \
-    "30 分钟:30" \
-    "45 分钟:45" \
-    "60 分钟:60"
+  # Two fixed reminders before bedtime: T-15min ("猫猫开始打哈欠了") and
+  # T-1min ("它要去拉灯绳了"). The 15-minute lead also drives when launchd
+  # wakes the daemon — keep this in sync with daemon.sh's wind_down().
+  local winddown=15
 
   # ── show contract ──
   ui_blank
@@ -68,7 +66,7 @@ run_init() {
     "" \
     "  猫猫睡觉：${BOLD}$bedtime${RESET}    猫猫离开：${BOLD}$wakeup${RESET}" \
     "  来睡日子：${BOLD}$days_display${RESET}" \
-    "  提前 ${BOLD}$winddown 分钟${RESET}提醒你准备" \
+    "  睡前 ${BOLD}15${RESET} 分钟和 ${BOLD}1${RESET} 分钟会提醒你" \
     "" \
     "  ${C_RED}我愿意遵守承诺让猫猫好好休息。${RESET}")"
 
@@ -125,7 +123,7 @@ ENDJSON
     "" \
     "猫猫已经记住你家地址了。" \
     "今晚 ${BOLD}$bedtime${RESET}，它会住进你的电脑睡觉。" \
-    "提前 ${BOLD}$winddown 分钟${RESET}，会提醒你准备让它休息。" \
+    "睡前 ${BOLD}15${RESET} 分钟和 ${BOLD}1${RESET} 分钟会提醒你。" \
     "" \
     "${DIM}输入 zzz 查看今晚状态${RESET}")"
   ui_blank
