@@ -11,10 +11,10 @@ ZZZ_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # If running from source, ZZZ_ROOT is the project directory
 if [ -f "$ZZZ_ROOT/lib/config.sh" ]; then
   LIB_DIR="$ZZZ_ROOT/lib"
-  SRC_DIR="$ZZZ_ROOT/src"
+  SRC_DIR="$ZZZ_ROOT/src/cli"
 elif [ -f "$HOME/.timetosleep/lib/config.sh" ]; then
   LIB_DIR="$HOME/.timetosleep/lib"
-  SRC_DIR="$HOME/.timetosleep/src"
+  SRC_DIR="$HOME/.timetosleep/src/cli"
 else
   echo "Error: Cat Bedtime is not properly installed."
   echo "Run install.sh first or check your installation."

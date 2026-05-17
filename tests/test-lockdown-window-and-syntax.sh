@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 echo "=== bash -n (syntax) ==="
-for f in src/daemon.sh; do
+for f in src/cli/daemon.sh; do
   if ! bash -n "$f"; then
     echo "FAIL: bash -n $f" >&2
     exit 1

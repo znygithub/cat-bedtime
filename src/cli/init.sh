@@ -2,7 +2,7 @@
 # Cat Bedtime onboarding — zzz init
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$ROOT_DIR/lib/ui.sh"
 source "$ROOT_DIR/lib/config.sh"
 source "$ROOT_DIR/lib/stats.sh"

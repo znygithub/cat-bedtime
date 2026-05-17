@@ -16,8 +16,8 @@ _launchd_gui() {
 
 _script_path() {
   local name="$1"
-  local installed="$HOME/.timetosleep/src/${name}"
-  local dev="$(cd "$SCRIPT_DIR_SCHED/../src" && pwd)/${name}"
+  local installed="$HOME/.timetosleep/src/cli/${name}"
+  local dev="$(cd "$SCRIPT_DIR_SCHED/../src/cli" && pwd)/${name}"
   if [ -f "$installed" ]; then
     echo "$installed"
   else

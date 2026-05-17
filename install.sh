@@ -39,14 +39,22 @@ mkdir -p "$INSTALL_DIR/assets"
 ui_step "安装文件..."
 cp -r "$SCRIPT_DIR/lib/"* "$INSTALL_DIR/lib/"
 cp -r "$SCRIPT_DIR/src/"* "$INSTALL_DIR/src/"
+
+# Copy assets (cat image, animation video)
 if [ -d "$SCRIPT_DIR/assets" ]; then
   cp -r "$SCRIPT_DIR/assets/"* "$INSTALL_DIR/assets/" 2>/dev/null || true
 fi
+
+# Copy binaries
 cp "$SCRIPT_DIR/bin/zzz" "$INSTALL_DIR/bin/zzz"
 cp "$SCRIPT_DIR/bin/zzz-overlay" "$INSTALL_DIR/bin/zzz-overlay"
+if [ -d "$SCRIPT_DIR/bin/Cat Bedtime.app" ]; then
+  rm -rf "$INSTALL_DIR/bin/Cat Bedtime.app"
+  cp -R "$SCRIPT_DIR/bin/Cat Bedtime.app" "$INSTALL_DIR/bin/Cat Bedtime.app"
+fi
 chmod +x "$INSTALL_DIR/bin/zzz"
 chmod +x "$INSTALL_DIR/bin/zzz-overlay"
-chmod +x "$INSTALL_DIR/src/daemon.sh"
+chmod +x "$INSTALL_DIR/src/cli/daemon.sh"
 
 # ── 4. Create symlink ──
 ui_step "创建 zzz 命令..."

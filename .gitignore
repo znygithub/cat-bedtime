@@ -6,6 +6,10 @@
 # Cursor IDE
 .cursor/
 
-# Local heavyweight animation assets
+# Large animation assets (downloaded separately)
 assets/*.mov
 assets/*.mp4
+
+# Compiled binaries
+bin/zzz-overlay
+bin/Cat Bedtime.app/
