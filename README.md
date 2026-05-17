@@ -11,7 +11,6 @@
 - **猫猫领养流程**：`zzz init` 会引导你设置猫猫来睡觉的时间、离开的时间、每周来住的日子，以及提前多久提醒。
 - **睡前提醒**：到点前逐步发送通知、降低亮度和音量，提醒你收拾工作。
 - **强制锁屏**：睡觉时间到后，全屏覆盖所有显示器、暂停媒体、静音；覆盖层被杀掉也会重新拉起。
-- **重启防绕过**：登录时如果仍在猫猫睡觉时段，会自动重新进入锁屏。
 - **到点恢复**：起床时间后退出锁屏，恢复亮度和音量，并记录猫猫来过。
 - **请假机制**：`zzz tonight off` 可以让猫猫今晚不来，需要留一句原因。
 
@@ -60,12 +59,11 @@ zzz uninstall               # 卸载
 - `bin/zzz` 是 Shell CLI 入口。
 - `src/init.sh` 负责猫猫领养设置。
 - `src/daemon.sh` 编排睡前提醒、锁屏、唤醒恢复。
-- `src/bootcheck.sh` 负责登录后的锁屏时段自检。
 - `bin/zzz-overlay` 是预编译 Swift 全屏覆盖层，支持多显示器。
-- `launchd` 负责定时触发和开机自检。
+- `launchd` 负责定时触发每晚流程。
 - 配置和记录存储在 `~/.timetosleep/config.json` 与 `~/.timetosleep/stats.json`。
 
-开发者可以从 [ARCHITECTURE.md](ARCHITECTURE.md) 了解模块结构；历史踩坑和回归风险保留在 [PITFALLS.md](PITFALLS.md)。
+产品目标和体验叙事见 [PRODUCT_GOALS.md](PRODUCT_GOALS.md)。开发者可以从 [ARCHITECTURE.md](ARCHITECTURE.md) 了解模块结构；历史踩坑和回归风险保留在 [PITFALLS.md](PITFALLS.md)。
 
 ## 许可
 

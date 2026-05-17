@@ -17,7 +17,6 @@ cat-bedtime/
 ├── src/
 │   ├── init.sh             # zzz init 领养流程
 │   ├── daemon.sh           # 睡前提醒 → 锁屏 → 唤醒恢复
-│   ├── bootcheck.sh        # 登录时锁屏窗口自检
 │   ├── media.sh            # 暂停媒体、保存 / 恢复音量
 │   ├── brightness.sh       # 保存 / 恢复 / 渐变亮度
 │   └── overlay/
@@ -49,7 +48,7 @@ cat-bedtime/
 ├── saved_brightness        # 锁屏前亮度备份
 ├── saved_volume            # 锁屏前音量备份
 ├── skip_tonight            # 今晚请假标记
-└── daemon.log              # daemon / bootcheck 日志
+└── daemon.log              # daemon 日志
 ```
 
 ## 核心流程
@@ -91,20 +90,7 @@ cat-bedtime/
 
 `daemon.sh` 的等待逻辑按墙钟轮询，不依赖一次长 `sleep`，避免 Mac 合盖休眠后时间错位。
 
-### 4. 登录自检
-
-`com.timetosleep.bootcheck` 在登录时触发 `src/bootcheck.sh`。
-
-它会检查：
-
-- 配置是否存在。
-- 当前锁屏窗口对应的睡觉日是否是猫猫来住日。跨午夜时，凌晨部分归属前一天晚上。
-- 今晚是否请假。
-- 当前时间是否在 `bedtime ~ wakeup` 锁屏窗口内。
-
-如果仍在锁屏窗口内，会启动覆盖层并保持它存活到起床时间。
-
-### 5. 正式锁屏覆盖层
+### 4. 正式锁屏覆盖层
 
 `src/overlay/LockScreen.swift` 是正式锁屏程序，编译产物为 `bin/zzz-overlay`。
 
@@ -120,7 +106,7 @@ cat-bedtime/
 - 到起床窗口后自动退出。
 - 支持异常逃生：短时间内连按两下 ESC 会重新读取配置；只有当前不在锁屏窗口或今天不是启用日时才退出。
 
-### 6. 预览程序
+### 5. 预览程序
 
 `CatBedtimePreview.swift` 和 `CatVideoBedtimePreview.swift` 是开发预览。它们会随 `src/` 被复制到安装目录，但没有用户命令入口，也不会参与正式覆盖层。
 
@@ -131,14 +117,13 @@ cat-bedtime/
 
 ## launchd
 
-安装后会写入两个用户级 agent：
+安装后会写入一个用户级 agent：
 
 | Label | 触发方式 | 职责 |
 | --- | --- | --- |
 | `com.timetosleep.daemon` | 每天 `bedtime - winddown` | 执行睡前提醒和锁屏流程 |
-| `com.timetosleep.bootcheck` | 登录时 `RunAtLoad` | 防止重启绕过锁屏窗口 |
 
-Plist 文件位于 `~/Library/LaunchAgents/`。
+Plist 文件位于 `~/Library/LaunchAgents/`。更新或卸载时会清理旧版本留下的 `com.timetosleep.bootcheck` 登录自检 agent。
 
 ## 模块依赖
 
@@ -162,12 +147,6 @@ src/daemon.sh
 ├── src/brightness.sh
 └── bin/zzz-overlay
 
-src/bootcheck.sh
-├── lib/config.sh
-├── src/media.sh
-├── src/brightness.sh
-└── bin/zzz-overlay
-
 bin/zzz-overlay
 ├── ~/.timetosleep/config.json
 └── ~/.timetosleep/stats.json
@@ -185,7 +164,7 @@ tests/test-config-numeric-fallback.sh
 
 它们覆盖：
 
-- `daemon.sh` / `bootcheck.sh` 语法。
+- `daemon.sh` 语法。
 - 23:00 到 07:00 这类跨午夜锁屏窗口。
 - 合盖休眠后不应在白天误锁。
 - `winddown_minutes` 缺失或非法时的默认值。
@@ -195,7 +174,6 @@ tests/test-config-numeric-fallback.sh
 - 改 CLI 文案或命令：`bin/zzz`
 - 改领养流程：`src/init.sh`
 - 改提醒、锁屏、唤醒恢复：`src/daemon.sh`
-- 改重启后自检：`src/bootcheck.sh`
 - 改 launchd plist：`lib/schedule.sh`
 - 改正式锁屏 UI：`src/overlay/LockScreen.swift`
 - 重新编译正式覆盖层：`src/overlay/build.sh`

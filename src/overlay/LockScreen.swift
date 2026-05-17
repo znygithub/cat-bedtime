@@ -1,6 +1,6 @@
 import AVFoundation
 import Cocoa
-import CoreImage
+import CoreText
 import QuartzCore
 
 // MARK: - Helpers
@@ -58,7 +58,7 @@ struct SleepConfig {
     }
 }
 
-// MARK: - Lock window math (aligned with bootcheck.sh / daemon)
+// MARK: - Lock window math (aligned with daemon)
 
 enum LockWindowMath {
     static func parseHHMM(_ s: String) -> Int? {
@@ -168,14 +168,38 @@ private final class VideoFrameSource {
 }
 
 private final class VideoRenderer {
-    private let context = CIContext(options: [
-        .workingColorSpace: CGColorSpaceCreateDeviceRGB(),
-        .outputColorSpace: CGColorSpaceCreateDeviceRGB(),
-    ])
+    func alphaImage(from pixelBuffer: CVPixelBuffer) -> CGImage? {
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
 
-    func image(from pixelBuffer: CVPixelBuffer) -> CGImage? {
-        let image = CIImage(cvPixelBuffer: pixelBuffer)
-        return context.createCGImage(image, from: image.extent)
+        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
+            return nil
+        }
+
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo.byteOrder32Little.union(
+            CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)
+        )
+        let data = Data(bytes: baseAddress, count: bytesPerRow * height)
+
+        guard let provider = CGDataProvider(data: data as CFData) else {
+            return nil
+        }
+
+        return CGImage(width: width,
+                       height: height,
+                       bitsPerComponent: 8,
+                       bitsPerPixel: 32,
+                       bytesPerRow: bytesPerRow,
+                       space: colorSpace,
+                       bitmapInfo: bitmapInfo,
+                       provider: provider,
+                       decode: nil,
+                       shouldInterpolate: true,
+                       intent: .defaultIntent)
     }
 }
 
@@ -208,8 +232,9 @@ class LockWindowController {
     private func createLockWindow(for screen: NSScreen) -> NSWindow {
         let window = LockWindow(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: false)
         window.level = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel()) + 1)
-        window.isOpaque = true
-        window.backgroundColor = .black
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = false
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         window.isReleasedWhenClosed = false
         window.hidesOnDeactivate = false
@@ -285,6 +310,8 @@ class CatLockScreenView: NSView {
         super.init(frame: frame)
         wantsLayer = true
         layer?.contentsScale = NSScreen.main?.backingScaleFactor ?? 2.0
+        layer?.isOpaque = false
+        layer?.backgroundColor = NSColor.clear.cgColor
         startDisplayTimer()
         video?.play()
     }
@@ -317,11 +344,20 @@ class CatLockScreenView: NSView {
         CACurrentMediaTime() - startTime
     }
 
+    override var isOpaque: Bool { false }
+
     override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
+        if video == nil {
+            super.draw(dirtyRect)
+        } else {
+            clearForTransparentWindow()
+        }
+
         let time = video?.currentTime ?? elapsed
 
-        drawNightBackground()
+        if video == nil {
+            drawNightBackground()
+        }
         drawLightsOutOverlay(time: time)
 
         if video == nil {
@@ -333,6 +369,15 @@ class CatLockScreenView: NSView {
         let textAlpha = easeOutQuart(progress(time, start: lightsOutAt + lightsOutDuration + 1.0, duration: 1.2))
         drawLockText(alpha: CGFloat(video == nil ? 1.0 : textAlpha))
         drawEmergencyHint()
+    }
+
+    private func clearForTransparentWindow() {
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        context.saveGState()
+        context.setBlendMode(.copy)
+        context.setFillColor(NSColor.clear.cgColor)
+        context.fill(bounds)
+        context.restoreGState()
     }
 
     private func drawNightBackground() {
@@ -353,7 +398,7 @@ class CatLockScreenView: NSView {
 
     private func drawCatVideo() {
         guard let pixelBuffer = video?.currentPixelBuffer() else { return }
-        if let image = renderer.image(from: pixelBuffer) {
+        if let image = renderer.alphaImage(from: pixelBuffer) {
             lastFrame = image
         }
         guard let frame = lastFrame else { return }
@@ -412,8 +457,13 @@ class CatLockScreenView: NSView {
             .paragraphStyle: leftPS,
         ]
         let clockY = bounds.height * 0.82
-        NSAttributedString(string: currentTimeString(), attributes: timeAttrs)
-            .draw(in: NSRect(x: margin, y: clockY, width: textWidth, height: fontSize * 1.3))
+        drawVisuallyLeftAligned(
+            NSAttributedString(string: currentTimeString(), attributes: timeAttrs),
+            x: margin,
+            y: clockY,
+            width: textWidth,
+            height: fontSize * 1.3
+        )
 
         let quoteAttrs: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 20, weight: .regular),
@@ -421,8 +471,13 @@ class CatLockScreenView: NSView {
             .kern: 1.4,
             .paragraphStyle: leftPS,
         ]
-        NSAttributedString(string: "嘘，猫猫睡了，安静", attributes: quoteAttrs)
-            .draw(in: NSRect(x: margin, y: clockY - 40, width: textWidth, height: 36))
+        drawVisuallyLeftAligned(
+            NSAttributedString(string: "嘘，猫猫睡了，安静", attributes: quoteAttrs),
+            x: margin,
+            y: clockY - 40,
+            width: textWidth,
+            height: 36
+        )
 
         let mins = LockWindowMath.minutesUntilWakeup(config: config)
         let h = mins / 60
@@ -435,8 +490,24 @@ class CatLockScreenView: NSView {
             .kern: 1.1,
             .paragraphStyle: leftPS,
         ]
-        NSAttributedString(string: "猫猫 \(config.wakeupTime) 起床 · \(countdown)", attributes: infoAttrs)
-            .draw(in: NSRect(x: margin, y: clockY - 72, width: textWidth, height: 28))
+        drawVisuallyLeftAligned(
+            NSAttributedString(string: "猫猫 \(config.wakeupTime) 起床 · \(countdown)", attributes: infoAttrs),
+            x: margin,
+            y: clockY - 72,
+            width: textWidth,
+            height: 28
+        )
+    }
+
+    private func drawVisuallyLeftAligned(_ text: NSAttributedString,
+                                         x: CGFloat,
+                                         y: CGFloat,
+                                         width: CGFloat,
+                                         height: CGFloat) {
+        let line = CTLineCreateWithAttributedString(text)
+        let glyphBounds = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
+        let glyphMinX = glyphBounds.isNull ? 0 : glyphBounds.minX
+        text.draw(in: NSRect(x: x - glyphMinX, y: y, width: width, height: height))
     }
 
     private func drawEmergencyHint() {

@@ -34,7 +34,7 @@ read -e -r -p "$prompt" answer
 
 日志表现：当晚的 `Launching overlay` 之后，第二天早上**没有** `Wake time reached` 这行。用户一打开电脑就是黑屏锁死。
 
-**解法：** 判断"是否已经进入白天窗口"而不是精确匹配时分。和 `bootcheck.sh` 用同一套逻辑（支持跨午夜），哪怕 Timer 错过 07:00 的整个窗口，醒来后第一次采样就能退出：
+**解法：** 判断"是否已经进入白天窗口"而不是精确匹配时分。使用统一的锁屏窗口逻辑（支持跨午夜），哪怕 Timer 错过 07:00 的整个窗口，醒来后第一次采样就能退出：
 
 ```swift
 let inAwakeWindow: Bool
@@ -81,8 +81,67 @@ end tell
 
 **需求** 若再出现逻辑/时间异常导致误锁，需要一条不破坏「契约时段内绝对锁死」的逃生口。
 
-**解法** 全屏层 `LockScreen.swift`：在约 0.45s 内连按两下 ESC → 重新读取 `config.json` 与当前系统时间；仅当**不在**锁机窗（与 `bootcheck` 相同）**或**今天不是契约日时可 `exit(0)`，否则忽略。Timer 仍按原逻辑到点自动退出。
+**解法** 全屏层 `LockScreen.swift`：在约 0.45s 内连按两下 ESC → 重新读取 `config.json` 与当前系统时间；仅当**不在**锁机窗或**今天不是契约日**时可 `exit(0)`，否则忽略。Timer 仍按原逻辑到点自动退出。
 
 **补充** 到点退出的 `checkWakeTime` 必须检测「**刚才还在锁机窗 → 本秒已出窗**」再 `exit`；若误写成「只要当前不在锁机窗就 exit」，白天手动 `open` 测锁屏会约 1s 内被关，还容易被误以为「点一下屏就没了」。
 
 **补充2** 双击 ESC 不能只靠 local monitor。`NSApplication.ActivationPolicy.prohibited` + 普通 borderless window 可能拿不到键盘焦点，ESC 根本进不来。窗口需可成为 key/main window，content view 需接受 first responder，并用 `.accessory` 后主动 `activate`。
+
+## 9. launchd 首次安装时 `bootout` 失败会吞掉后续 `bootstrap`
+
+`bin/zzz` 使用 `set -e`。`lib/schedule.sh` 在安装 / 更新任务时会先执行 `launchctl bootout` 再 `launchctl bootstrap`。
+
+首次安装时，`com.timetosleep.daemon` 本来还不存在，`launchctl bootout gui/<uid>/<label>` 会返回非零。若没有显式忽略这个返回值，`set -e` 会让 `zzz init` 提前退出：配置和 plist 可能已经写好，但任务没有真正加载进 launchd。
+
+**日志表现：**
+
+- `~/.timetosleep/config.json` 存在。
+- `~/Library/LaunchAgents/com.timetosleep.daemon.plist` 存在。
+- `launchctl list | rg com.timetosleep` 查不到任务。
+- 到 `bedtime - winddown_minutes` 时 `~/.timetosleep/daemon.log` 没有 `Starting wind-down sequence`。
+
+**解法：** `bootout` 是「如果存在则卸载」的清理动作，允许失败：
+
+```bash
+launchctl bootout "$gui/$AGENT_LABEL" 2>/dev/null || true
+launchctl bootstrap "$gui" "$PLIST_PATH"
+```
+
+## 10. `osascript display notification` 返回成功但用户看不到通知
+
+睡前提醒最初只用 AppleScript：
+
+```applescript
+display notification "猫猫还有 15 分钟就要睡觉了" with title "Cat Bedtime" sound name "default"
+```
+
+它在命令层面可能返回成功，daemon 日志也会继续往下走，但用户屏幕上不一定出现横幅。
+
+常见原因：
+
+- 通知来源是 `osascript` / Script Editor 一类系统脚本进程，不是明确的 `Cat Bedtime` App。
+- 系统设置里该来源的通知权限或横幅样式未开启。
+- 专注模式 / 勿扰 / 系统策略把通知静默。
+- launchd 后台脚本发出的通知比前台 App 更容易被系统压掉。
+
+**当前解法：** `notify()` 只用 `display alert … as informational`（约 12 秒自动消失）。**特意不发** `display notification`：
+
+- osascript 没有 bundle identity，横幅会显示一个蓝色文件夹默认图标加 `--` 占位应用名，看起来像出了错的弹窗（视觉评审里被点名 "太丑"）。
+- 横幅本来就常被 DnD / 专注模式压掉，并不可靠（也是这个 pitfall 最初的起因）。
+- `display alert` 是居中模态 sheet，自带「温柔提醒」气质、不带占位图标、超时后脚本继续走，wind-down 不会无限阻塞。
+
+`notify()` 仍保留 `subtitle` 参数：当非空时，会被提到 alert message 第一行（再隔一空行接 body），让「还有 N 分钟到关灯」这种关键信息天然位于视觉重心。
+
+注意 AppleScript 成功时 stderr/stdout 里仍可能混入人类可读的状态行，不要靠「解析输出」判断是否失败；只看退出码：
+
+```bash
+output=$(osascript ... 2>&1)
+status=$?
+if (( status != 0 )); then
+  log "notify osascript failed ($status): $output"
+else
+  log "notify sent: $title — ${subtitle:-∅}"
+fi
+```
+
+**长期正确做法：** 做一个真正的 macOS App / helper，由 `Cat Bedtime.app` 申请通知权限，并用 `UNUserNotificationCenter` 发通知。这样系统设置里会出现明确的 Cat Bedtime 通知来源，横幅、声音和通知中心展示都更可控。Shell + `osascript` 只能算运行时兜底方案，不应视作稳定通知系统。

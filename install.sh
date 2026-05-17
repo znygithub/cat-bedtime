@@ -47,7 +47,6 @@ cp "$SCRIPT_DIR/bin/zzz-overlay" "$INSTALL_DIR/bin/zzz-overlay"
 chmod +x "$INSTALL_DIR/bin/zzz"
 chmod +x "$INSTALL_DIR/bin/zzz-overlay"
 chmod +x "$INSTALL_DIR/src/daemon.sh"
-chmod +x "$INSTALL_DIR/src/bootcheck.sh"
 
 # ── 4. Create symlink ──
 ui_step "创建 zzz 命令..."

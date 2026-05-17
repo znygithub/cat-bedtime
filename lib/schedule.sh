@@ -5,9 +5,9 @@ SCRIPT_DIR_SCHED="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR_SCHED/config.sh"
 
 AGENT_LABEL="com.timetosleep.daemon"
-BOOTCHECK_LABEL="com.timetosleep.bootcheck"
 PLIST_PATH="$HOME/Library/LaunchAgents/${AGENT_LABEL}.plist"
-BOOTCHECK_PLIST="$HOME/Library/LaunchAgents/${BOOTCHECK_LABEL}.plist"
+LEGACY_BOOTCHECK_LABEL="com.timetosleep.bootcheck"
+LEGACY_BOOTCHECK_PLIST="$HOME/Library/LaunchAgents/${LEGACY_BOOTCHECK_LABEL}.plist"
 
 # launchctl load/unload are unreliable on recent macOS; use bootstrap / bootout (user GUI domain)
 _launchd_gui() {
@@ -43,9 +43,8 @@ _winddown_start() {
 }
 
 schedule_install() {
-  local daemon_path bootcheck_path
+  local daemon_path
   daemon_path=$(_script_path "daemon.sh")
-  bootcheck_path=$(_script_path "bootcheck.sh")
   local start_time
   start_time=$(_winddown_start)
   local hour="${start_time%%:*}"
@@ -95,55 +94,21 @@ schedule_install() {
 </plist>
 PLIST
 
-  # ── Boot check: runs at login, re-locks if in lockdown window ──
-  cat > "$BOOTCHECK_PLIST" << PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>${BOOTCHECK_LABEL}</string>
-
-  <key>ProgramArguments</key>
-  <array>
-    <string>/bin/bash</string>
-    <string>${bootcheck_path}</string>
-  </array>
-
-  <key>RunAtLoad</key>
-  <true/>
-
-  <key>StandardOutPath</key>
-  <string>${ZZZ_DIR}/daemon.log</string>
-  <key>StandardErrorPath</key>
-  <string>${ZZZ_DIR}/daemon.log</string>
-
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>HOME</key>
-    <string>${HOME}</string>
-    <key>PATH</key>
-    <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
-  </dict>
-</dict>
-</plist>
-PLIST
-
-  # (Re)load both agents
+  # (Re)load the nightly agent and remove the old login-time lock checker.
   local gui
   gui=$(_launchd_gui)
-  launchctl bootout "$gui/$AGENT_LABEL" 2>/dev/null
-  launchctl bootout "$gui/$BOOTCHECK_LABEL" 2>/dev/null
+  launchctl bootout "$gui/$AGENT_LABEL" 2>/dev/null || true
+  launchctl bootout "$gui/$LEGACY_BOOTCHECK_LABEL" 2>/dev/null || true
+  rm -f "$LEGACY_BOOTCHECK_PLIST"
   launchctl bootstrap "$gui" "$PLIST_PATH"
-  launchctl bootstrap "$gui" "$BOOTCHECK_PLIST"
 }
 
 schedule_uninstall() {
   local gui
   gui=$(_launchd_gui)
-  launchctl bootout "$gui/$AGENT_LABEL" 2>/dev/null
-  launchctl bootout "$gui/$BOOTCHECK_LABEL" 2>/dev/null
-  for p in "$PLIST_PATH" "$BOOTCHECK_PLIST"; do
+  launchctl bootout "$gui/$AGENT_LABEL" 2>/dev/null || true
+  launchctl bootout "$gui/$LEGACY_BOOTCHECK_LABEL" 2>/dev/null || true
+  for p in "$PLIST_PATH" "$LEGACY_BOOTCHECK_PLIST"; do
     [ -f "$p" ] && rm -f "$p"
   done
 }
