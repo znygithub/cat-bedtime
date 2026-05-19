@@ -2,15 +2,15 @@
 
 [English](README_EN.md)
 
-**猫猫困了**（Cat Bedtime）是 macOS 上的睡前锁屏工具：你设定猫猫每天几点来、几点走；到点后它会占住屏幕睡觉，提醒你也该睡觉了
+**猫猫困了**（Cat Bedtime）是 macOS 上的睡前锁屏工具：你设定猫猫每天几点来、几点走；到点后它会占住屏幕睡觉，提醒你也该睡觉了。
 
 ---
 
 ## 为什么做这个
 
-深夜最难的不是「不知道要睡」，而是很难让自己**主动远离电子产品**：再看一个帖子、再刷一会视频、再给 AI 提一个需求，不知不觉就压缩了自己的睡眠时间，没有保障自己第二天的精力
+深夜最难的不是「不知道要睡」，而是很难让自己**主动远离电子产品**：再看一个帖子、再刷一会视频、再给 AI 提一个需求，不知不觉就压缩了自己的睡眠时间，没有保障自己第二天的精力。
 
-**猫猫困了**（Cat Bedtime）换了一个更好接受的约束——**不是系统在罚你，而是一只猫真的来你屏幕上睡觉**。看到可爱的猫猫也困了，你也会更愿意把电脑让出来，把时间还给自己
+**猫猫困了**（Cat Bedtime）换了一个更好接受的约束——**不是系统在罚你，而是一只猫真的来你屏幕上睡觉**。看到可爱的猫猫也困了，你也会更愿意把电脑让出来，把时间还给自己。
 
 ---
 
@@ -18,7 +18,7 @@
 
 ### 用「领养」而不是「设置锁屏」
 
-第一次使用走的是**领养流程**：你填猫猫几点睡、几点走、每周哪几天来，还要签一句「我愿意让猫猫好好休息」。这是在建立一种小小的承诺，我会觉得这比冷冰冰的「启用屏幕锁定」更容易坚持
+第一次使用走的是**领养流程**：你填猫猫几点睡、几点走、每周哪几天来，还要签一句「我愿意让猫猫好好休息」。这是在建立一种小小的承诺，我会觉得这比冷冰冰的「启用屏幕锁定」更容易坚持。
 
 ### 温柔地靠近，再坚决地锁住
 
@@ -44,19 +44,10 @@
 
 ## 下载安装（二选一）
 
-所有安装包都在 GitHub 的 **Releases（发行版）** 页面，不在仓库源码列表里：
-
-**👉 [打开下载页](https://github.com/znygithub/cat-bedtime/releases/latest)**
-
-进入后往下拉，在 **Assets（资源）** 里会看到两个文件（需 macOS 12+）：
-
 | 我想要 | 文件名 | 直接下载 | 适合谁 |
 | --- | --- | --- | --- |
 | **图形界面**（推荐） | `Cat-Bedtime-macOS.dmg` | [下载 DMG](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/Cat-Bedtime-macOS.dmg) | 像普通 Mac 软件一样安装，有窗口、有按钮 |
-| **命令行** | `cat-bedtime-cli-macos.tar.gz` | [下载 CLI 包](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/cat-bedtime-cli-macos.tar.gz) | 主要在「终端」里用 `zzz` 命令，没有 App 图标 |
-
-**`cat-bedtime-cli-macos.tar.gz` 是什么？**  
-就是一个压缩包（和 `.zip` 类似）。解压后得到文件夹 `cat-bedtime-cli/`，里面有安装脚本和程序；**不是** App，不会在启动台里出现图标。大多数人用 **DMG 版** 就够了；只有喜欢用终端管日程的人才需要 CLI 包。
+| **命令行** | `cat-bedtime-cli-macos.tar.gz` | [下载 CLI 包](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/cat-bedtime-cli-macos.tar.gz) | 主要在「终端」里用 `zzz` 命令，具体命令参加下文（更推荐让你的Agent阅读该文档） |
 
 ### App 版（推荐大多数用户）
 
@@ -65,7 +56,7 @@
 3. 首次打开，按引导完成「猫猫领养」（睡觉时间、起床时间、每周哪几天来）
 4. 若系统提示无法打开：系统设置 → 隐私与安全性 → 仍要打开
 
-### CLI 版（给会用终端的用户）
+### CLI 版（不想多下载一个APP的朋友）
 
 1. 下载 [cat-bedtime-cli-macos.tar.gz](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/cat-bedtime-cli-macos.tar.gz)（在「下载」文件夹里双击解压，或用归档实用工具打开）
 2. 打开「终端」，进入解压出来的文件夹并安装：
