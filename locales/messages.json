@@ -8,6 +8,13 @@
     "ko"
   ],
   "strings": {
+    "app.name": {
+      "zh-Hans": "猫猫困了",
+      "zh-Hant": "貓貓困了",
+      "en": "Cat Bedtime",
+      "ja": "Cat Bedtime",
+      "ko": "Cat Bedtime"
+    },
     "welcome.title": {
       "zh-Hans": "你打算领养这只小猫吗？",
       "zh-Hant": "你打算領養這隻小貓嗎？",
@@ -177,67 +184,67 @@
       "ko": "잠금 화면 미리보기 재생 중"
     },
     "dashboard.delay": {
-      "zh-Hans": "推迟",
-      "zh-Hant": "推遲",
-      "en": "Delay",
-      "ja": "延期",
-      "ko": "연기"
+      "zh-Hans": "晚点再来",
+      "zh-Hant": "晚點再來",
+      "en": "Come later",
+      "ja": "少し遅らせる",
+      "ko": "조금 늦게"
     },
     "dashboard.sleep_config": {
-      "zh-Hans": "睡眠时间配置",
-      "zh-Hant": "睡眠時間配置",
-      "en": "Sleep schedule",
-      "ja": "睡眠スケジュール",
-      "ko": "수면 일정"
+      "zh-Hans": "猫猫作息",
+      "zh-Hant": "貓貓作息",
+      "en": "Cat's routine",
+      "ja": "ねこの生活リズム",
+      "ko": "고양이 생활 패턴"
     },
     "dashboard.sleep": {
-      "zh-Hans": "睡觉",
-      "zh-Hant": "睡覺",
+      "zh-Hans": "来睡觉",
+      "zh-Hant": "來睡覺",
       "en": "Bedtime",
       "ja": "就寝",
       "ko": "취침"
     },
     "dashboard.wakeup": {
-      "zh-Hans": "起床",
-      "zh-Hant": "起床",
-      "en": "Wake-up",
-      "ja": "起床",
-      "ko": "기상"
+      "zh-Hans": "离开",
+      "zh-Hant": "離開",
+      "en": "Leaves",
+      "ja": "お帰り",
+      "ko": "떠남"
     },
     "dashboard.weekly": {
-      "zh-Hans": "每周哪天来",
-      "zh-Hant": "每週哪天來",
-      "en": "Weekly visit days",
-      "ja": "毎週の訪問日",
-      "ko": "매주 방문 요일"
+      "zh-Hans": "每周几来住",
+      "zh-Hant": "每週幾來住",
+      "en": "Visit days",
+      "ja": "来る曜日",
+      "ko": "방문 요일"
     },
     "dashboard.saved": {
-      "zh-Hans": "已保存！",
-      "zh-Hant": "已儲存！",
-      "en": "Saved!",
-      "ja": "保存しました！",
-      "ko": "저장했어요!"
+      "zh-Hans": "猫猫记住了！",
+      "zh-Hant": "貓貓記住了！",
+      "en": "The cat remembers!",
+      "ja": "ねこが覚えました！",
+      "ko": "고양이가 기억했어요!"
     },
     "dashboard.save": {
-      "zh-Hans": "确认修改",
-      "zh-Hant": "確認修改",
-      "en": "Save changes",
-      "ja": "変更を保存",
-      "ko": "변경 저장"
+      "zh-Hans": "告诉猫猫",
+      "zh-Hant": "告訴貓貓",
+      "en": "Tell the cat",
+      "ja": "ねこに伝える",
+      "ko": "고양이에게 알리기"
     },
     "days.every_day": {
-      "zh-Hans": "每天",
-      "zh-Hant": "每天",
-      "en": "Every day",
-      "ja": "毎日",
-      "ko": "매일"
+      "zh-Hans": "猫猫天天来",
+      "zh-Hant": "貓貓天天來",
+      "en": "Cat visits every day",
+      "ja": "毎日来ます",
+      "ko": "매일 와요"
     },
     "days.weekdays": {
-      "zh-Hans": "周一到周五",
-      "zh-Hant": "週一到週五",
-      "en": "Mon–Fri",
-      "ja": "月〜金",
-      "ko": "월–금"
+      "zh-Hans": "工作日来住",
+      "zh-Hant": "工作日來住",
+      "en": "Weekdays only",
+      "ja": "平日だけ",
+      "ko": "평일만"
     },
     "days.none": {
       "zh-Hans": "无",
@@ -352,11 +359,11 @@
       "ko": "일요일"
     },
     "delay.title": {
-      "zh-Hans": "⏰ 往后推迟时间",
-      "zh-Hant": "⏰ 往後推遲時間",
-      "en": "⏰ Delay bedtime",
-      "ja": "⏰ 就寝を延期",
-      "ko": "⏰ 취침 연기"
+      "zh-Hans": "⏰ 晚点让猫猫来",
+      "zh-Hant": "⏰ 晚點讓貓貓來",
+      "en": "⏰ Ask the cat to come later",
+      "ja": "⏰ ねこを遅らせる",
+      "ko": "⏰ 고양이를 늦게 부르기"
     },
     "delay.hint": {
       "zh-Hans": "有特殊情况，请提前告知猫猫",
@@ -366,25 +373,25 @@
       "ko": "특별한 일이 있으면 고양이에게 미리 알려 주세요"
     },
     "delay.reason_label": {
-      "zh-Hans": "原因（可选）",
-      "zh-Hant": "原因（可選）",
-      "en": "Reason (optional)",
-      "ja": "理由（任意）",
-      "ko": "사유 (선택)"
+      "zh-Hans": "跟猫猫说什么（可选）",
+      "zh-Hant": "跟貓貓說什麼（可選）",
+      "en": "Note for the cat (optional)",
+      "ja": "ねこへのメモ（任意）",
+      "ko": "고양이에게 할 말 (선택)"
     },
     "delay.reason_placeholder": {
-      "zh-Hans": "今晚有特殊情况是因为",
-      "zh-Hant": "今晚有特殊情況是因為",
-      "en": "Why tonight is special…",
-      "ja": "今夜は特別な理由が…",
-      "ko": "오늘 밤 특별한 이유…"
+      "zh-Hans": "今晚晚点是因为…",
+      "zh-Hant": "今晚晚點是因為…",
+      "en": "Why tonight is later…",
+      "ja": "今夜遅い理由…",
+      "ko": "오늘 밤 늦는 이유…"
     },
     "delay.duration_label": {
-      "zh-Hans": "推迟多久",
-      "zh-Hant": "推遲多久",
-      "en": "Delay by",
-      "ja": "どれくらい延期",
-      "ko": "얼마나 연기할까요"
+      "zh-Hans": "晚多久再来",
+      "zh-Hant": "晚多久再來",
+      "en": "Come how much later",
+      "ja": "どれくらい遅らせる",
+      "ko": "얼마나 늦출까요"
     },
     "delay.15min": {
       "zh-Hans": "15 分钟",
@@ -443,8 +450,8 @@
       "ko": "%d분 연기"
     },
     "quit.title": {
-      "zh-Hans": "确定要退出 Cat Bedtime 吗？",
-      "zh-Hant": "確定要退出 Cat Bedtime 嗎？",
+      "zh-Hans": "确定要退出猫猫困了吗？",
+      "zh-Hant": "確定要退出貓貓困了嗎？",
       "en": "Quit Cat Bedtime?",
       "ja": "Cat Bedtime を終了しますか？",
       "ko": "Cat Bedtime를 종료할까요?"
@@ -471,8 +478,8 @@
       "ko": "취소"
     },
     "menu.quit": {
-      "zh-Hans": "退出 Cat Bedtime",
-      "zh-Hant": "退出 Cat Bedtime",
+      "zh-Hans": "退出猫猫困了",
+      "zh-Hant": "退出貓貓困了",
       "en": "Quit Cat Bedtime",
       "ja": "Cat Bedtime を終了",
       "ko": "Cat Bedtime 종료"
@@ -1115,8 +1122,8 @@
       "ko": "알 수 없는 명령: %s"
     },
     "cli.error.not_installed": {
-      "zh-Hans": "Error: Cat Bedtime is not properly installed.\nRun install.sh first or check your installation.",
-      "zh-Hant": "Error: Cat Bedtime is not properly installed.\nRun install.sh first or check your installation.",
+      "zh-Hans": "猫猫困了未正确安装。\n请先运行 install.sh，或检查安装目录。",
+      "zh-Hant": "貓貓困了未正確安裝。\n請先執行 install.sh，或檢查安裝目錄。",
       "en": "Error: Cat Bedtime is not properly installed.\nRun install.sh first or check your installation.",
       "ja": "Error: Cat Bedtime が正しくインストールされていません。\ninstall.sh を実行してください。",
       "ko": "Error: Cat Bedtime가 올바르게 설치되지 않았습니다.\ninstall.sh를 실행하세요."
@@ -1318,8 +1325,8 @@
       "ko": "일치하지 않아요. 전체 문장을 입력하세요"
     },
     "install.title": {
-      "zh-Hans": "安装 Cat Bedtime",
-      "zh-Hant": "安裝 Cat Bedtime",
+      "zh-Hans": "安装猫猫困了",
+      "zh-Hant": "安裝貓貓困了",
       "en": "Install Cat Bedtime",
       "ja": "Cat Bedtime をインストール",
       "ko": "Cat Bedtime 설치"
@@ -1332,8 +1339,8 @@
       "ko": "환경 확인 중…"
     },
     "install.error.macos": {
-      "zh-Hans": "Cat Bedtime 目前只支持 macOS",
-      "zh-Hant": "Cat Bedtime 目前只支援 macOS",
+      "zh-Hans": "猫猫困了目前只支持 macOS",
+      "zh-Hant": "貓貓困了目前只支援 macOS",
       "en": "Cat Bedtime only supports macOS",
       "ja": "Cat Bedtime は macOS のみ対応",
       "ko": "Cat Bedtime는 macOS만 지원"

@@ -100,6 +100,23 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'PLIST'
 </plist>
 PLIST
 
+# Localized display name (bundle filename stays Cat Bedtime.app)
+write_infoplist_strings() {
+  local lproj="$1"
+  local display_name="$2"
+  mkdir -p "$APP_BUNDLE/Contents/Resources/$lproj"
+  cat > "$APP_BUNDLE/Contents/Resources/$lproj/InfoPlist.strings" <<EOF
+/* Localized bundle display name */
+"CFBundleDisplayName" = "$display_name";
+"CFBundleName" = "$display_name";
+EOF
+}
+write_infoplist_strings "en.lproj" "Cat Bedtime"
+write_infoplist_strings "zh-Hans.lproj" "猫猫困了"
+write_infoplist_strings "zh-Hant.lproj" "貓貓困了"
+write_infoplist_strings "ja.lproj" "Cat Bedtime"
+write_infoplist_strings "ko.lproj" "Cat Bedtime"
+
 echo "Built: $APP_BUNDLE"
 lipo -info "$APP_BUNDLE/Contents/MacOS/zzz-app"
 macos_codesign_target "$APP_BUNDLE"

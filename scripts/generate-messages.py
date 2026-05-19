@@ -14,6 +14,7 @@ def add(key, *langs):
 # Import all keys from a module - for maintainability we'll inline in run
 # This file is the generator; edit add() calls below.
 
+add("app.name", "猫猫困了", "貓貓困了", "Cat Bedtime", "Cat Bedtime", "Cat Bedtime")
 add("welcome.title",
     "你打算领养这只小猫吗？", "你打算領養這隻小貓嗎？",
     "Ready to adopt this little cat?", "この子猫を迎え入れますか？", "이 고양이를 입양할까요?")
@@ -52,15 +53,15 @@ add("pledge.required_phrase",
     "我愿意遵守承诺让猫猫好好休息", "我願意遵守承諾讓貓貓好好休息",
     "I promise to let the cat rest well", "約束を守って、ねこをしっかり休ませます", "약속을 지켜 고양이가 푹 쉴 수 있게 하겠습니다")
 add("lock_preview.playing", "正在播放锁屏效果预览", "正在播放鎖屏效果預覽", "Playing lock screen preview", "ロック画面プレビューを再生中", "잠금 화면 미리보기 재생 중")
-add("dashboard.delay", "推迟", "推遲", "Delay", "延期", "연기")
-add("dashboard.sleep_config", "睡眠时间配置", "睡眠時間配置", "Sleep schedule", "睡眠スケジュール", "수면 일정")
-add("dashboard.sleep", "睡觉", "睡覺", "Bedtime", "就寝", "취침")
-add("dashboard.wakeup", "起床", "起床", "Wake-up", "起床", "기상")
-add("dashboard.weekly", "每周哪天来", "每週哪天來", "Weekly visit days", "毎週の訪問日", "매주 방문 요일")
-add("dashboard.saved", "已保存！", "已儲存！", "Saved!", "保存しました！", "저장했어요!")
-add("dashboard.save", "确认修改", "確認修改", "Save changes", "変更を保存", "변경 저장")
-add("days.every_day", "每天", "每天", "Every day", "毎日", "매일")
-add("days.weekdays", "周一到周五", "週一到週五", "Mon–Fri", "月〜金", "월–금")
+add("dashboard.delay", "晚点再来", "晚點再來", "Come later", "少し遅らせる", "조금 늦게")
+add("dashboard.sleep_config", "猫猫作息", "貓貓作息", "Cat's routine", "ねこの生活リズム", "고양이 생활 패턴")
+add("dashboard.sleep", "来睡觉", "來睡覺", "Bedtime", "就寝", "취침")
+add("dashboard.wakeup", "离开", "離開", "Leaves", "お帰り", "떠남")
+add("dashboard.weekly", "每周几来住", "每週幾來住", "Visit days", "来る曜日", "방문 요일")
+add("dashboard.saved", "猫猫记住了！", "貓貓記住了！", "The cat remembers!", "ねこが覚えました！", "고양이가 기억했어요!")
+add("dashboard.save", "告诉猫猫", "告訴貓貓", "Tell the cat", "ねこに伝える", "고양이에게 알리기")
+add("days.every_day", "猫猫天天来", "貓貓天天來", "Cat visits every day", "毎日来ます", "매일 와요")
+add("days.weekdays", "工作日来住", "工作日來住", "Weekdays only", "平日だけ", "평일만")
 add("days.none", "无", "無", "None", "なし", "없음")
 add("days.list_sep", "、", "、", ", ", "、", ", ")
 
@@ -77,21 +78,21 @@ for i, (zs, zf, es, ef, js, jf, ks, kf) in enumerate(days_data, 1):
     S[f"day.short.{i}"] = e(zs, zs, es, js, ks)
     S[f"day.full.{i}"] = e(zf, zf.replace("周", "週"), ef, jf, kf)
 
-add("delay.title", "⏰ 往后推迟时间", "⏰ 往後推遲時間", "⏰ Delay bedtime", "⏰ 就寝を延期", "⏰ 취침 연기")
+add("delay.title", "⏰ 晚点让猫猫来", "⏰ 晚點讓貓貓來", "⏰ Ask the cat to come later", "⏰ ねこを遅らせる", "⏰ 고양이를 늦게 부르기")
 add("delay.hint", "有特殊情况，请提前告知猫猫", "有特殊情況，請提前告知貓貓",
     "If something comes up, let the cat know in advance", "事情があるときは、ねこに先に伝えてください", "특별한 일이 있으면 고양이에게 미리 알려 주세요")
-add("delay.reason_label", "原因（可选）", "原因（可選）", "Reason (optional)", "理由（任意）", "사유 (선택)")
-add("delay.reason_placeholder", "今晚有特殊情况是因为", "今晚有特殊情況是因為", "Why tonight is special…", "今夜は特別な理由が…", "오늘 밤 특별한 이유…")
-add("delay.duration_label", "推迟多久", "推遲多久", "Delay by", "どれくらい延期", "얼마나 연기할까요")
+add("delay.reason_label", "跟猫猫说什么（可选）", "跟貓貓說什麼（可選）", "Note for the cat (optional)", "ねこへのメモ（任意）", "고양이에게 할 말 (선택)")
+add("delay.reason_placeholder", "今晚晚点是因为…", "今晚晚點是因為…", "Why tonight is later…", "今夜遅い理由…", "오늘 밤 늦는 이유…")
+add("delay.duration_label", "晚多久再来", "晚多久再來", "Come how much later", "どれくらい遅らせる", "얼마나 늦출까요")
 add("delay.15min", "15 分钟", "15 分鐘", "15 min", "15 分", "15분")
 add("delay.30min", "30 分钟", "30 分鐘", "30 min", "30 分", "30분")
 add("delay.custom", "自定义", "自訂", "Custom", "カスタム", "직접 입력")
-add("delay.postpone", "推迟", "推遲", "Delay", "延期", "연기")
+add("delay.postpone", "晚点再来", "晚點再來", "Come later", "遅らせる", "늦게 부르기")
 add("delay.minutes", "分钟", "分鐘", "min", "分", "분")
 add("delay.cancel", "取消", "取消", "Cancel", "キャンセル", "취소")
 add("delay.submit", "告知猫猫", "告知貓貓", "Tell the cat", "ねこに伝える", "고양이에게 알리기")
-add("delay.default_reason", "推迟%d分钟", "推遲%d分鐘", "Delayed %d minutes", "%d 分延期", "%d분 연기")
-add("quit.title", "确定要退出 Cat Bedtime 吗？", "確定要退出 Cat Bedtime 嗎？", "Quit Cat Bedtime?", "Cat Bedtime を終了しますか？", "Cat Bedtime를 종료할까요?")
+add("delay.default_reason", "猫猫晚%d分钟来", "貓貓晚%d分鐘來", "Cat comes %d min later", "ねこが%d分遅れ", "고양이 %d분 늦게")
+add("quit.title", "确定要退出猫猫困了吗？", "確定要退出貓貓困了嗎？", "Quit Cat Bedtime?", "Cat Bedtime を終了しますか？", "Cat Bedtime를 종료할까요?")
 add("quit.message",
     "退出只会关闭设置窗口\n睡眠时间和后台定时任务会继续保留，到点仍会锁屏",
     "退出只會關閉設定視窗\n睡眠時間和背景定時任務會繼續保留，到點仍會鎖屏",
@@ -100,7 +101,7 @@ add("quit.message",
     "설정 창만 닫힙니다.\n일정과 백그라운드 작업은 계속되며, 시간이 되면 잠금 화면이 켜집니다.")
 add("quit.confirm", "退出", "退出", "Quit", "終了", "종료")
 add("quit.cancel", "取消", "取消", "Cancel", "キャンセル", "취소")
-add("menu.quit", "退出 Cat Bedtime", "退出 Cat Bedtime", "Quit Cat Bedtime", "Cat Bedtime を終了", "Cat Bedtime 종료")
+add("menu.quit", "退出猫猫困了", "退出貓貓困了", "Quit Cat Bedtime", "Cat Bedtime を終了", "Cat Bedtime 종료")
 add("lock.quote", "嘘，猫猫睡了，安静", "噓，貓貓睡了，安靜", "Shh — the cat is asleep. Quiet, please.", "しっ、ねこが寝てる。静かに", "쉿, 고양이가 자고 있어요. 조용히")
 add("lock.countdown_hours", "还有 %d 小时 %d 分钟醒来", "還有 %d 小時 %d 分鐘醒來", "Wakes in %d h %d min", "あと %d 時間 %d 分で起きる", "%d시간 %d분 후에 일어나요")
 add("lock.countdown_minutes", "还有 %d 分钟醒来", "還有 %d 分鐘醒來", "Wakes in %d min", "あと %d 分で起きる", "%d분 후에 일어나요")
@@ -211,8 +212,8 @@ cli_keys = [
     ("cli.help.help", "显示帮助", "顯示說明", "Show help", "ヘルプ", "도움말"),
     ("cli.error.unknown_command", "未知命令: %s", "未知命令: %s", "Unknown command: %s", "不明なコマンド: %s", "알 수 없는 명령: %s"),
     ("cli.error.not_installed",
-     "Error: Cat Bedtime is not properly installed.\nRun install.sh first or check your installation.",
-     "Error: Cat Bedtime is not properly installed.\nRun install.sh first or check your installation.",
+     "猫猫困了未正确安装。\n请先运行 install.sh，或检查安装目录。",
+     "貓貓困了未正確安裝。\n請先執行 install.sh，或檢查安裝目錄。",
      "Error: Cat Bedtime is not properly installed.\nRun install.sh first or check your installation.",
      "Error: Cat Bedtime が正しくインストールされていません。\ninstall.sh を実行してください。",
      "Error: Cat Bedtime가 올바르게 설치되지 않았습니다.\ninstall.sh를 실행하세요."),
@@ -266,9 +267,9 @@ for row in ui_keys:
     add(row[0], *row[1:])
 
 install_keys = [
-    ("install.title", "安装 Cat Bedtime", "安裝 Cat Bedtime", "Install Cat Bedtime", "Cat Bedtime をインストール", "Cat Bedtime 설치"),
+    ("install.title", "安装猫猫困了", "安裝貓貓困了", "Install Cat Bedtime", "Cat Bedtime をインストール", "Cat Bedtime 설치"),
     ("install.step.check", "检查环境...", "檢查環境...", "Checking environment…", "環境を確認…", "환경 확인 중…"),
-    ("install.error.macos", "Cat Bedtime 目前只支持 macOS", "Cat Bedtime 目前只支援 macOS", "Cat Bedtime only supports macOS", "Cat Bedtime は macOS のみ対応", "Cat Bedtime는 macOS만 지원"),
+    ("install.error.macos", "猫猫困了目前只支持 macOS", "貓貓困了目前只支援 macOS", "Cat Bedtime only supports macOS", "Cat Bedtime は macOS のみ対応", "Cat Bedtime는 macOS만 지원"),
     ("install.error.python", "需要 Python 3（macOS 通常自带）", "需要 Python 3（macOS 通常內建）", "Python 3 required (usually preinstalled on macOS)", "Python 3 が必要です", "Python 3 필요"),
     ("install.check_ok", "环境检查通过", "環境檢查通過", "Environment OK", "環境 OK", "환경 확인 완료"),
     ("install.step.dir", "创建安装目录...", "建立安裝目錄...", "Creating install directory…", "インストール先を作成…", "설치 디렉터리 생성…"),

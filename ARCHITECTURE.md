@@ -1,6 +1,6 @@
-# Cat Bedtime 架构
+# Cat Bedtime · 猫猫困了 — 架构
 
-本文档描述当前代码现状。产品已经从早期的 TimeToSleep 契约叙事转为猫猫睡觉叙事，但运行时目录和 launchd label 仍保留 `timetosleep`，用于兼容已有安装
+本文档描述当前代码现状。产品英文名 **Cat Bedtime**，中文名 **猫猫困了**；已从早期的 TimeToSleep 契约叙事转为猫猫睡觉叙事，但运行时目录和 launchd label 仍保留 `timetosleep`，用于兼容已有安装
 
 ## 目录结构
 

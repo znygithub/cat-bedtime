@@ -965,6 +965,15 @@ struct LockPreviewView: View {
     }
 }
 
+// MARK: - Dashboard layout helpers
+
+private struct DashboardCardHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 // MARK: - S5: Dashboard
 
 struct DashboardView: View {
@@ -975,13 +984,14 @@ struct DashboardView: View {
     @Binding var wakeup: Date
     @State private var showDelay = false
     @State private var savedNotice = false
+    @State private var dashboardCardHeight: CGFloat = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack(spacing: 12) {
                 MoonIcon()
-                Text("Cat Bedtime")
+                Text(L10n.t("app.name"))
                     .font(Lamp.rounded(20, weight: .bold))
                     .foregroundColor(Lamp.creamText)
                 Spacer()
@@ -1005,47 +1015,22 @@ struct DashboardView: View {
             .padding(.horizontal, 8)
             .padding(.bottom, 20)
 
-            // 2-col grid
-            HStack(spacing: 12) {
-                // Time panel
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack(spacing: 8) {
-                        Text("🌙")
-                        Text(L10n.t("dashboard.sleep_config"))
-                            .font(Lamp.rounded(15, weight: .bold))
-                            .foregroundColor(Lamp.creamText)
-                    }
-                    timeRow(label: L10n.t("dashboard.sleep"), time: $bedtime)
-                    timeRow(label: L10n.t("dashboard.wakeup"), time: $wakeup)
-                }
-                .padding(20)
-                .background(Lamp.glass2)
-                .cornerRadius(14)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(Lamp.borderDefault, lineWidth: 1)
-                )
-
-                // Days panel
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack(spacing: 8) {
-                        Text("📅")
-                        Text(L10n.t("dashboard.weekly"))
-                            .font(Lamp.rounded(15, weight: .bold))
-                            .foregroundColor(Lamp.creamText)
-                    }
-                    DayGrid(activeDays: $activeDays, compact: true)
-                    Text(dashDaysSummary())
-                        .font(Lamp.rounded(11))
-                        .foregroundColor(Lamp.duskDim)
-                }
-                .padding(20)
-                .background(Lamp.glass2)
-                .cornerRadius(14)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(Lamp.borderDefault, lineWidth: 1)
-                )
+            // 2-col grid — intrinsic height only; both cards share measured height
+            HStack(alignment: .top, spacing: 12) {
+                dashboardScheduleCard
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear.preference(
+                                key: DashboardCardHeightKey.self,
+                                value: geo.size.height
+                            )
+                        }
+                    )
+                dashboardWeeklyCard
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .onPreferenceChange(DashboardCardHeightKey.self) { h in
+                if h > 0 { dashboardCardHeight = h }
             }
 
             Spacer()
@@ -1078,6 +1063,50 @@ struct DashboardView: View {
         }
     }
 
+    private var dashboardScheduleCard: some View {
+        dashboardCard(minHeight: dashboardCardHeight) {
+            HStack(spacing: 8) {
+                Text("🌙")
+                Text(L10n.t("dashboard.sleep_config"))
+                    .font(Lamp.rounded(15, weight: .bold))
+                    .foregroundColor(Lamp.creamText)
+            }
+            timeRow(label: L10n.t("dashboard.sleep"), time: $bedtime)
+            timeRow(label: L10n.t("dashboard.wakeup"), time: $wakeup)
+        }
+    }
+
+    private var dashboardWeeklyCard: some View {
+        dashboardCard(minHeight: dashboardCardHeight) {
+            HStack(spacing: 8) {
+                Text("📅")
+                Text(L10n.t("dashboard.weekly"))
+                    .font(Lamp.rounded(15, weight: .bold))
+                    .foregroundColor(Lamp.creamText)
+            }
+            DayGrid(activeDays: $activeDays, compact: true)
+        }
+    }
+
+    private func dashboardCard<Content: View>(
+        minHeight: CGFloat,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 14, content: content)
+            .padding(20)
+            .frame(
+                maxWidth: .infinity,
+                minHeight: minHeight > 0 ? minHeight : nil,
+                alignment: .topLeading
+            )
+            .background(Lamp.glass2)
+            .cornerRadius(14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Lamp.borderDefault, lineWidth: 1)
+            )
+    }
+
     private func syncFromConfig() {
         activeDays = Set(mgr.config.days)
         bedtime = parseTime(mgr.config.bedtime)
@@ -1095,16 +1124,12 @@ struct DashboardView: View {
         }
     }
 
-    private func dashDaysSummary() -> String {
-        L10n.daysSummary(sorted: activeDays.sorted())
-    }
-
     private func timeRow(label: String, time: Binding<Date>) -> some View {
         HStack(spacing: 10) {
             Text(label)
                 .font(Lamp.rounded(13))
                 .foregroundColor(Lamp.sandMuted)
-                .frame(width: 36, alignment: .leading)
+                .frame(width: 52, alignment: .leading)
             DatePicker("", selection: time, displayedComponents: .hourAndMinute)
                 .datePickerStyle(.compact)
                 .labelsHidden()
@@ -1116,18 +1141,23 @@ struct DashboardView: View {
 }
 
 struct MoonIcon: View {
+    private let size: CGFloat = 36
+
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(Lamp.amberMoon)
-                .frame(width: 36, height: 36)
-            Circle()
-                .fill(Lamp.nightSurface)
-                .frame(width: 36, height: 36)
-                .offset(x: 9, y: -6)
-        }
-        .frame(width: 36, height: 36)
-        .clipShape(Circle())
+        Circle()
+            .fill(Lamp.amberMoon)
+            .frame(width: size, height: size)
+            .mask {
+                ZStack {
+                    Rectangle()
+                    Circle()
+                        .frame(width: size * 0.72, height: size * 0.72)
+                        .offset(x: size * 0.26, y: -size * 0.14)
+                        .blendMode(.destinationOut)
+                }
+                .compositingGroup()
+            }
+            .frame(width: size, height: size)
     }
 }
 
@@ -1385,6 +1415,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var window: NSWindow!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        L10n.prepareForAppLaunch()
         installMainMenu()
         installAppIcon()
         NotificationScheduler.shared.requestPermission()
@@ -1406,7 +1437,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Cat Bedtime"
+        window.title = L10n.t("app.name")
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.backgroundColor = Lamp.nsNightSurface

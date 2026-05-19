@@ -83,6 +83,22 @@ enum L10n {
 
     // MARK: - Loading
 
+    /// Packaged .app: load bundled copy and refresh ~/.timetosleep so CLI/overlay stay in sync.
+    static func prepareForAppLaunch() {
+        guard isPackagedApp, let bundled = bundledCatalogURL() else { return }
+        syncBundledCatalogToHome(from: bundled)
+        reload()
+    }
+
+    static func reload() {
+        loaded = false
+        catalog = [:]
+    }
+
+    private static var isPackagedApp: Bool {
+        Bundle.main.bundlePath.hasSuffix(".app")
+    }
+
     private static func loadIfNeeded() {
         guard !loaded else { return }
         loaded = true
@@ -95,16 +111,65 @@ enum L10n {
         catalog = strings
     }
 
+    private static func bundledCatalogURL() -> URL? {
+        if let url = Bundle.main.url(forResource: "messages", withExtension: "json", subdirectory: "locales") {
+            return url
+        }
+        return Bundle.main.resourceURL?.appendingPathComponent("locales/messages.json")
+    }
+
+    private static func syncBundledCatalogToHome(from bundled: URL) {
+        let dest = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".timetosleep/locales/messages.json")
+        guard shouldRefreshHomeCatalog(bundled: bundled, home: dest) else { return }
+        do {
+            try FileManager.default.createDirectory(
+                at: dest.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            if FileManager.default.fileExists(atPath: dest.path) {
+                try FileManager.default.removeItem(at: dest)
+            }
+            try FileManager.default.copyItem(at: bundled, to: dest)
+        } catch {
+            // Non-fatal — app still reads from bundle.
+        }
+    }
+
+    private static func shouldRefreshHomeCatalog(bundled: URL, home: URL) -> Bool {
+        guard FileManager.default.fileExists(atPath: home.path) else { return true }
+        guard let bundledData = try? Data(contentsOf: bundled),
+              let homeData = try? Data(contentsOf: home),
+              let bundledJSON = try? JSONSerialization.jsonObject(with: bundledData) as? [String: Any],
+              let homeJSON = try? JSONSerialization.jsonObject(with: homeData) as? [String: Any] else {
+            return true
+        }
+        let bundledVersion = bundledJSON["version"] as? Int ?? 0
+        let homeVersion = homeJSON["version"] as? Int ?? 0
+        if bundledVersion != homeVersion { return bundledVersion > homeVersion }
+        let bundledKeys = (bundledJSON["strings"] as? [String: Any])?.count ?? 0
+        let homeKeys = (homeJSON["strings"] as? [String: Any])?.count ?? 0
+        if bundledKeys != homeKeys { return bundledKeys > homeKeys }
+        return bundledData != homeData
+    }
+
     private static func locateCatalogURL() -> URL? {
         let name = "messages.json"
+        if isPackagedApp, let bundled = bundledCatalogURL() {
+            let path = bundled.standardizedFileURL.path
+            if FileManager.default.fileExists(atPath: path) {
+                return bundled
+            }
+        }
         var candidates: [URL] = []
-        if let resource = Bundle.main.resourceURL {
-            candidates.append(resource.appendingPathComponent("locales/\(name)"))
+        if let bundled = bundledCatalogURL() {
+            candidates.append(bundled)
         }
         let home = FileManager.default.homeDirectoryForCurrentUser
         candidates.append(home.appendingPathComponent(".timetosleep/locales/\(name)"))
         let executable = URL(fileURLWithPath: CommandLine.arguments[0])
         let binDir = executable.deletingLastPathComponent()
+        candidates.append(binDir.appendingPathComponent("../Resources/locales/\(name)"))
         candidates.append(binDir.appendingPathComponent("../locales/\(name)"))
         candidates.append(binDir.appendingPathComponent("../../locales/\(name)"))
         for url in candidates {

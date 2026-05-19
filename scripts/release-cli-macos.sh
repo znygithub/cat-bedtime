@@ -35,6 +35,8 @@ ditto "$ROOT_DIR/bin/zzz-overlay" "$CLI_STAGE/bin/zzz-overlay"
 ditto "$ROOT_DIR/lib" "$CLI_STAGE/lib"
 mkdir -p "$CLI_STAGE/src"
 ditto "$ROOT_DIR/src/cli" "$CLI_STAGE/src/cli"
+mkdir -p "$CLI_STAGE/locales"
+install -m 644 "$ROOT_DIR/locales/messages.json" "$CLI_STAGE/locales/messages.json"
 ditto "$ROOT_DIR/assets" "$CLI_STAGE/assets"
 
 codesign --verify --verbose=2 "$CLI_STAGE/bin/zzz-overlay"

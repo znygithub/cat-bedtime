@@ -16,8 +16,8 @@ elif [ -f "$HOME/.timetosleep/lib/config.sh" ]; then
   LIB_DIR="$HOME/.timetosleep/lib"
   SRC_DIR="$HOME/.timetosleep/src/cli"
 else
-  # English fallback when lib/i18n is unavailable
-  echo "Error: Cat Bedtime is not properly installed."
+  # Fallback when lib/i18n is unavailable
+  echo "Error: Cat Bedtime / 猫猫困了 is not properly installed."
   echo "Run install.sh first or check your installation."
   exit 1
 fi

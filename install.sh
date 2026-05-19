@@ -36,6 +36,10 @@ mkdir -p "$INSTALL_DIR/assets"
 mkdir -p "$INSTALL_DIR/locales"
 
 ui_step "$(msg install.step.files)"
+if [ ! -f "$SCRIPT_DIR/locales/messages.json" ]; then
+  ui_error "缺少 locales/messages.json。请从完整发布包安装，或 git clone 整个仓库。"
+  exit 1
+fi
 cp -r "$SCRIPT_DIR/lib/"* "$INSTALL_DIR/lib/"
 cp -r "$SCRIPT_DIR/src/"* "$INSTALL_DIR/src/"
 cp "$SCRIPT_DIR/locales/messages.json" "$INSTALL_DIR/locales/messages.json"
