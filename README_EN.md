@@ -47,25 +47,29 @@ After the animation, the cat stays on screen until wake-up time, with a countdow
 
 ## Download (pick one)
 
-Get the latest build from **[GitHub Releases](https://github.com/znygithub/cat-bedtime/releases)** (macOS 12+).
+Installers live on GitHub **Releases**, not in the source file tree:
 
-| I want | File | Best for |
-| --- | --- | --- |
-| **Graphical app** | `Cat-Bedtime-macOS.dmg` | Drag into Applications, no terminal |
-| **CLI** | `cat-bedtime-cli-macos.tar.gz` | Manage schedule with the `zzz` command |
+**👉 [Open downloads](https://github.com/znygithub/cat-bedtime/releases/latest)**
 
-> If Releases has no assets yet, use **Install from source** below.
+Scroll to **Assets** (macOS 12+):
+
+| I want | File | Direct link | Best for |
+| --- | --- | --- | --- |
+| **App** (recommended) | `Cat-Bedtime-macOS.dmg` | [Download DMG](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/Cat-Bedtime-macOS.dmg) | Normal Mac app with a window |
+| **CLI** | `cat-bedtime-cli-macos.tar.gz` | [Download CLI](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/cat-bedtime-cli-macos.tar.gz) | Terminal-only; `zzz` command, no Dock icon |
+
+**What is `cat-bedtime-cli-macos.tar.gz`?** A compressed archive (like `.zip`). After extracting you get a `cat-bedtime-cli/` folder with `install.sh` — not a `.app`. Most people should use the **DMG**.
 
 ### App edition
 
-1. Download and open `Cat-Bedtime-macOS.dmg`
+1. Download and open [Cat-Bedtime-macOS.dmg](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/Cat-Bedtime-macOS.dmg)
 2. Drag **Cat Bedtime.app** into **Applications**
 3. Launch and complete **cat adoption** on first run
 4. If macOS blocks the app: System Settings → Privacy & Security → Open Anyway
 
 ### CLI edition
 
-1. Download and extract `cat-bedtime-cli-macos.tar.gz`
+1. Download [cat-bedtime-cli-macos.tar.gz](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/cat-bedtime-cli-macos.tar.gz) and extract it
 2. Run:
 
 ```bash

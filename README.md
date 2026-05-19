@@ -44,24 +44,31 @@
 
 ## 下载安装（二选一）
 
-在 **[GitHub Releases](https://github.com/znygithub/cat-bedtime/releases)** 下载最新版（需 macOS 12+）。
+所有安装包都在 GitHub 的 **Releases（发行版）** 页面，不在仓库源码列表里：
 
-| 我想要 | 下载文件 | 适合谁 |
-| --- | --- | --- |
-| **图形界面 App** | `Cat-Bedtime-macOS.dmg` | 不想用终端，拖进「应用程序」即可 |
-| **命令行 CLI** | `cat-bedtime-cli-macos.tar.gz` | 习惯用 `zzz` 命令管理日程 |
+**👉 [打开下载页](https://github.com/znygithub/cat-bedtime/releases/latest)**
+
+进入后往下拉，在 **Assets（资源）** 里会看到两个文件（需 macOS 12+）：
+
+| 我想要 | 文件名 | 直接下载 | 适合谁 |
+| --- | --- | --- | --- |
+| **图形界面**（推荐） | `Cat-Bedtime-macOS.dmg` | [下载 DMG](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/Cat-Bedtime-macOS.dmg) | 像普通 Mac 软件一样安装，有窗口、有按钮 |
+| **命令行** | `cat-bedtime-cli-macos.tar.gz` | [下载 CLI 包](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/cat-bedtime-cli-macos.tar.gz) | 主要在「终端」里用 `zzz` 命令，没有 App 图标 |
+
+**`cat-bedtime-cli-macos.tar.gz` 是什么？**  
+就是一个压缩包（和 `.zip` 类似）。解压后得到文件夹 `cat-bedtime-cli/`，里面有安装脚本和程序；**不是** App，不会在启动台里出现图标。大多数人用 **DMG 版** 就够了；只有喜欢用终端管日程的人才需要 CLI 包。
 
 ### App 版（推荐大多数用户）
 
-1. 下载并打开 `Cat-Bedtime-macOS.dmg`
+1. 下载并打开 [Cat-Bedtime-macOS.dmg](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/Cat-Bedtime-macOS.dmg)
 2. 将 **Cat Bedtime.app** 拖到 **应用程序**
 3. 首次打开，按引导完成「猫猫领养」（睡觉时间、起床时间、每周哪几天来）
 4. 若系统提示无法打开：系统设置 → 隐私与安全性 → 仍要打开
 
-### CLI 版
+### CLI 版（给会用终端的用户）
 
-1. 下载并解压 `cat-bedtime-cli-macos.tar.gz`
-2. 在终端执行：
+1. 下载 [cat-bedtime-cli-macos.tar.gz](https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/cat-bedtime-cli-macos.tar.gz)（在「下载」文件夹里双击解压，或用归档实用工具打开）
+2. 打开「终端」，进入解压出来的文件夹并安装：
 
 ```bash
 cd cat-bedtime-cli
