@@ -35,4 +35,4 @@
 - 新用户只看 README 就能选对版本并完成安装
 - App 版：下载 DMG → 拖入应用程序 → 打开完成领养 → 到点能锁屏
 - CLI 版：下载 tar.gz → `install.sh` → `zzz init` → `zzz` 能看状态
-- 发布包已签名/公证（见 [RELEASE.md](RELEASE.md)）
+- 发布包已签名/公证（维护者本地用 `scripts/release-macos.sh` 构建）

@@ -130,7 +130,6 @@ The cat lock-screen video `assets/cat-bedtime.mov` is bundled in release archive
 | Doc | Purpose |
 | --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture |
-| [RELEASE.md](RELEASE.md) | Release signing & notarization |
 | [PITFALLS.md](PITFALLS.md) | Known pitfalls |
 
 ---
