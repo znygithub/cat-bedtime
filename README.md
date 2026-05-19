@@ -1,7 +1,5 @@
 # Cat Bedtime · 猫猫困了
 
-> 到点了，电脑借给猫猫睡觉。
-
 [English](README_EN.md)
 
 **猫猫困了**（Cat Bedtime）是 macOS 上的睡前锁屏工具：你设定猫猫每天几点来、几点走；到点后它会占住屏幕睡觉，提醒你也该睡觉了
