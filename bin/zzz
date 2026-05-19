@@ -32,7 +32,7 @@ cmd_default() {
   if ! config_exists; then
     ui_blank
     ui_moon
-    ui_print "  ${DIM}还没有领养猫猫。运行 ${RESET}${BOLD}zzz init${RESET}${DIM} 开始。${RESET}"
+    ui_print "  ${DIM}还没有领养猫猫。运行 ${RESET}${BOLD}zzz init${RESET}${DIM} 开始${RESET}"
     ui_blank
     return
   fi
@@ -332,7 +332,7 @@ cmd_uninstall() {
 
   if ! ui_type_confirm "确定要卸载吗？请输入：" "送走猫猫"; then
     ui_blank
-    ui_success "卸载已取消。"
+    ui_success "卸载已取消"
     ui_blank
     return
   fi
@@ -349,8 +349,8 @@ cmd_uninstall() {
   rm -f /usr/local/bin/zzz 2>/dev/null || true
 
   ui_blank
-  ui_success "已完全卸载。"
-  ui_print "  ${DIM}猫猫带着行李走了。它会记得你的。${RESET}"
+  ui_success "已完全卸载"
+  ui_print "  ${DIM}猫猫带着行李走了。它会记得你的${RESET}"
   ui_blank
 }
 

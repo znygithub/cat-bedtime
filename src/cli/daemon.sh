@@ -54,21 +54,60 @@ log "Starting wind-down sequence. Bedtime: $BEDTIME, Wake: $WAKEUP, Winddown: ${
 OVERLAY_BIN="$HOME/.timetosleep/bin/zzz-overlay"
 [ ! -x "$OVERLAY_BIN" ] && OVERLAY_BIN="$ROOT_DIR/bin/zzz-overlay"
 
-# ── Helper: center-screen informational alert (argv avoids quoting bugs with CJK) ──
+# ── Helper: native notification with center-screen alert fallback ──────────
 # Args: title, subtitle (may be empty), body lines, primary button label.
-# We do NOT use `display notification`: that banner shows osascript's default
-# "blue folder" icon and a "--" app-name placeholder (osascript has no bundle
-# identity), which looks broken. The center-screen `display alert` has no
-# icon at all and reads cleanly. Subtitle (if any) is promoted to the first
-# line of the alert message — it becomes the visually emphasized key-data
-# line above the prose body.
+# Native notifications are sent through Cat Bedtime.app via LaunchServices so
+# macOS attributes the banner to the real app bundle instead of osascript.
+# The AppleScript alert remains only as a fallback when no app bundle exists.
+find_app_notify_bundle() {
+  local candidates=(
+    "$HOME/.timetosleep/bin/Cat Bedtime.app"
+    "$ROOT_DIR/bin/Cat Bedtime.app"
+    "$ROOT_DIR/../.."
+  )
+  local p
+  for p in "${candidates[@]}"; do
+    if [ -d "$p" ] && [ -x "$p/Contents/MacOS/zzz-app" ]; then
+      echo "$p"
+      return 0
+    fi
+  done
+  return 1
+}
+
+notify_native() {
+  local title="$1" subtitle="$2" body="$3" app output status
+  app=$(find_app_notify_bundle) || return 127
+
+  output=$(/usr/bin/open -g -j -n "$app" --args --notify "$title" "$subtitle" "$body" 2>&1)
+  status=$?
+  if (( status != 0 )); then
+    log "native notify failed ($status): ${output:-no output}"
+    return "$status"
+  fi
+  log "native notify sent: ${title//$'\n'/ } — ${subtitle:-∅}"
+  return 0
+}
+
 notify() {
   local title="$1" subtitle="$2" body="$3" button="$4" output status
+  notify_native "$title" "$subtitle" "$body"
+  status=$?
+  if (( status == 0 )); then
+    return 0
+  fi
+
+  if (( status != 127 )); then
+    log "native notify was available but failed; skipping osascript alert fallback"
+    return "$status"
+  fi
+
+  # NOTE: keep argv passing here. It avoids quoting bugs with CJK text.
   # NOTE: do not pass `--` between `-` and the script's args. macOS osascript
   # treats `--` as a regular argv entry (not an end-of-options separator), so
   # it would land as `item 1 of argv` and shift every following slot by one —
   # the title becomes "--", the button label gets the body text, etc. (Symptom:
-  # a centered alert sheet whose blue button reads "收尾这一小段就好。" instead
+  # a centered alert sheet whose blue button reads "收尾这一小段就好" instead
   # of "知道啦".)
   output=$(
     osascript -l AppleScript - "$title" "$subtitle" "$body" "$button" <<'APPLESCRIPT' 2>&1
@@ -176,7 +215,7 @@ wind_down() {
   notify \
     $'\xf0\x9f\x90\xbe  猫猫开始打哈欠了' \
     "还有 ${total_min} 分钟到关灯" \
-    $'收尾这一小段就好。' \
+    $'收尾这一小段就好' \
     "知道啦"
 
   if ! is_active_winddown_day; then
@@ -239,7 +278,7 @@ wind_down() {
     notify \
       $'\xf0\x9f\x92\xa4  它要去拉灯绳了' \
       "一分钟后锁屏" \
-      $'手头的按个保存就好，今天到这。' \
+      $'手头的按个保存就好，今天到这' \
       "好"
   fi
 
@@ -278,6 +317,8 @@ lockdown() {
       OVERLAY_PID=$!
       log "Overlay PID: $OVERLAY_PID"
       wait $OVERLAY_PID 2>/dev/null
+      overlay_status=$?
+      log "Overlay exited with status $overlay_status"
 
       # Check if it's wake time
       local remaining

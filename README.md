@@ -1,20 +1,29 @@
 # Cat Bedtime
 
-> 到点了，电脑借给猫猫睡觉。
+> 到点了，电脑借给猫猫睡觉
 
-一个跑在 macOS 上的睡前锁屏工具。你设置猫猫每天几点来、几点走；时间到了，它会占住屏幕睡觉，你就该离开电脑了。
+一个跑在 macOS 上的睡前锁屏工具。你设置猫猫每天几点来、几点走；时间到了，它会占住屏幕睡觉，你就该离开电脑了
 
 [English](README_EN.md)
 
 ## 它做什么
 
-- **猫猫领养流程**：`zzz init` 会引导你设置猫猫来睡觉的时间、离开的时间、每周来住的日子，以及提前多久提醒。
-- **睡前提醒**：到点前逐步发送通知、降低亮度和音量，提醒你收拾工作。
-- **强制锁屏**：睡觉时间到后，全屏覆盖所有显示器、暂停媒体、静音；覆盖层被杀掉也会重新拉起。
-- **到点恢复**：起床时间后退出锁屏，恢复亮度和音量，并记录猫猫来过。
-- **请假机制**：`zzz tonight off` 可以让猫猫今晚不来，需要留一句原因。
+- **猫猫领养流程**：`zzz init` 会引导你设置猫猫来睡觉的时间、离开的时间、每周来住的日子，以及提前多久提醒
+- **睡前提醒**：到点前逐步发送通知、降低亮度和音量，提醒你收拾工作
+- **强制锁屏**：睡觉时间到后，全屏覆盖所有显示器、暂停媒体、静音；覆盖层被杀掉也会重新拉起
+- **到点恢复**：起床时间后退出锁屏，恢复亮度和音量，并记录猫猫来过
+- **请假机制**：`zzz tonight off` 可以让猫猫今晚不来，需要留一句原因
 
-## 安装
+## 安装方式
+
+Cat Bedtime 有两个面向用户的安装方式，选一个就可以：
+
+- **App 版**：下载 `Cat-Bedtime-macOS.dmg`，把 `Cat Bedtime.app` 拖到 Applications。适合不想碰终端的用户
+- **CLI 版**：下载 `cat-bedtime-cli-macos.tar.gz`，解压后运行 `bash install.sh`。适合喜欢用 `zzz` 命令管理日程的用户
+
+两者共享同一份用户配置和记录：`~/.timetosleep/`。不建议同时反复安装两版；如果同时装过，最后一次完成领养/配置的版本会更新 launchd 定时任务
+
+### 从源码安装 CLI 版
 
 ```bash
 git clone https://github.com/znygithub/cat-bedtime.git
@@ -22,9 +31,9 @@ cd cat-bedtime
 bash install.sh
 ```
 
-需要 macOS 和系统自带的 `python3`。日常安装不需要 Xcode、`jq` 或其他第三方依赖。
+需要 macOS 和系统自带的 `python3`。日常安装不需要 Xcode、`jq` 或其他第三方依赖
 
-运行时目录仍沿用早期项目名：`~/.timetosleep/`。这是为了兼容已有安装和 launchd 配置。
+运行时目录仍沿用早期项目名：`~/.timetosleep/`。这是为了兼容已有安装和 launchd 配置
 
 ## 开始使用
 
@@ -56,14 +65,15 @@ zzz uninstall               # 卸载
 
 ## 技术实现
 
-- `bin/zzz` 是 Shell CLI 入口。
-- `src/init.sh` 负责猫猫领养设置。
-- `src/daemon.sh` 编排睡前提醒、锁屏、唤醒恢复。
-- `bin/zzz-overlay` 是预编译 Swift 全屏覆盖层，支持多显示器。
-- `launchd` 负责定时触发每晚流程。
-- 配置和记录存储在 `~/.timetosleep/config.json` 与 `~/.timetosleep/stats.json`。
+- `bin/zzz` 是 Shell CLI 入口
+- `src/cli/init.sh` 负责 CLI 猫猫领养设置
+- `src/cli/daemon.sh` 编排睡前提醒、锁屏、唤醒恢复
+- `src/app/CatBedtimeApp.swift` 是 App 版入口，发布时会把 CLI 运行脚本、overlay 和 assets 打进 app bundle
+- `bin/zzz-overlay` 是预编译 Swift 全屏覆盖层，支持多显示器
+- `launchd` 负责定时触发每晚流程
+- 配置和记录存储在 `~/.timetosleep/config.json` 与 `~/.timetosleep/stats.json`
 
-产品目标和体验叙事见 [PRODUCT_GOALS.md](PRODUCT_GOALS.md)。开发者可以从 [ARCHITECTURE.md](ARCHITECTURE.md) 了解模块结构；历史踩坑和回归风险保留在 [PITFALLS.md](PITFALLS.md)。
+产品目标和体验叙事见 [PRODUCT_GOALS.md](PRODUCT_GOALS.md)。开发者可以从 [ARCHITECTURE.md](ARCHITECTURE.md) 了解模块结构；历史踩坑和回归风险保留在 [PITFALLS.md](PITFALLS.md)
 
 ## 许可
 

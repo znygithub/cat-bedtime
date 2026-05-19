@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN_DIR="${1:-$SCRIPT_DIR/../../bin}"
 APP_BUNDLE="$BIN_DIR/Cat Bedtime.app"
 
+source "$SCRIPT_DIR/../signing.sh"
+
 echo "Compiling Cat Bedtime app (universal: arm64 + x86_64)..."
 
 TMP_DIR="$(mktemp -d)"
@@ -13,12 +15,12 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 swiftc -O -target arm64-apple-macos12 \
   -o "$TMP_DIR/zzz-app.arm64" \
-  -framework Cocoa -framework SwiftUI \
+  -framework Cocoa -framework SwiftUI -framework UserNotifications \
   "$SCRIPT_DIR/CatBedtimeApp.swift"
 
 swiftc -O -target x86_64-apple-macos12 \
   -o "$TMP_DIR/zzz-app.x86_64" \
-  -framework Cocoa -framework SwiftUI \
+  -framework Cocoa -framework SwiftUI -framework UserNotifications \
   "$SCRIPT_DIR/CatBedtimeApp.swift"
 
 lipo -create -output "$TMP_DIR/zzz-app" \
@@ -31,6 +33,22 @@ mkdir -p "$APP_BUNDLE/Contents/MacOS"
 mkdir -p "$APP_BUNDLE/Contents/Resources"
 cp "$TMP_DIR/zzz-app" "$APP_BUNDLE/Contents/MacOS/zzz-app"
 chmod +x "$APP_BUNDLE/Contents/MacOS/zzz-app"
+
+# ── Copy app icon ──
+ICON_SRC="$SCRIPT_DIR/../../assets/AppIcon.icns"
+if [ -f "$ICON_SRC" ]; then
+  cp "$ICON_SRC" "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
+fi
+
+# ── Bundle runtime payload for drag-to-Applications installs ──
+mkdir -p "$APP_BUNDLE/Contents/Resources/bin"
+mkdir -p "$APP_BUNDLE/Contents/Resources/src"
+cp "$SCRIPT_DIR/../../bin/zzz-overlay" "$APP_BUNDLE/Contents/Resources/bin/zzz-overlay"
+cp -R "$SCRIPT_DIR/../../lib" "$APP_BUNDLE/Contents/Resources/lib"
+cp -R "$SCRIPT_DIR/../../src/cli" "$APP_BUNDLE/Contents/Resources/src/cli"
+cp -R "$SCRIPT_DIR/../../assets" "$APP_BUNDLE/Contents/Resources/assets"
+chmod +x "$APP_BUNDLE/Contents/Resources/bin/zzz-overlay"
+chmod +x "$APP_BUNDLE/Contents/Resources/src/cli/daemon.sh"
 
 cat > "$APP_BUNDLE/Contents/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -55,6 +73,12 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'PLIST'
   <string>12.0</string>
   <key>NSHighResolutionCapable</key>
   <true/>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
+  <key>CFBundleIconName</key>
+  <string>AppIcon</string>
+  <key>NSUserNotificationAlertStyle</key>
+  <string>banner</string>
   <key>LSUIElement</key>
   <false/>
 </dict>
@@ -63,3 +87,4 @@ PLIST
 
 echo "Built: $APP_BUNDLE"
 lipo -info "$APP_BUNDLE/Contents/MacOS/zzz-app"
+macos_codesign_target "$APP_BUNDLE"

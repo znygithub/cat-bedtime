@@ -1,5 +1,7 @@
 import Cocoa
+import Darwin
 import SwiftUI
+import UserNotifications
 
 // MARK: - Design Tokens (Lamplight)
 
@@ -112,11 +114,14 @@ class ConfigManager: ObservableObject {
         saveConfig()
         initStats()
         installSchedule()
+        NotificationScheduler.shared.requestPermission()
+        NotificationScheduler.shared.clearPendingReminders()
     }
 
     func updateConfigAndReschedule() {
         saveConfig()
         installSchedule()
+        NotificationScheduler.shared.clearPendingReminders()
     }
 
     // MARK: Stats
@@ -203,6 +208,9 @@ class ConfigManager: ObservableObject {
         try? FileManager.default.removeItem(atPath: legacyPlist)
         // bootstrap new
         shellRun("/bin/launchctl", ["bootstrap", gui, plistPath])
+        if shouldKickstartDaemonNow() {
+            shellRun("/bin/launchctl", ["kickstart", "-k", "\(gui)/\(agentLabel)"])
+        }
     }
 
     // MARK: Helpers
@@ -214,6 +222,11 @@ class ConfigManager: ObservableObject {
     }
 
     private func findDaemonPath() -> String {
+        if let bundled = Bundle.main.resourceURL?
+            .appendingPathComponent("src/cli/daemon.sh").path,
+           FileManager.default.fileExists(atPath: bundled) {
+            return bundled
+        }
         let installed = zzzDir.appendingPathComponent("src/cli/daemon.sh").path
         if FileManager.default.fileExists(atPath: installed) { return installed }
         // dev fallback: relative to binary
@@ -234,6 +247,82 @@ class ConfigManager: ObservableObject {
         return (startMin / 60, startMin % 60)
     }
 
+    private func shouldKickstartDaemonNow(date: Date = Date()) -> Bool {
+        guard let bedMin = minutes(from: config.bedtime),
+              let wakeMin = minutes(from: config.wakeup) else { return false }
+
+        let winddown = max(config.winddown_minutes, 1)
+        let startMin = (bedMin - winddown + 1440) % 1440
+        let nowMin = minutes(in: date)
+        let today = isoWeekday(for: date)
+
+        guard let sleepWeekday = catchupWeekday(
+            nowMin: nowMin,
+            bedMin: bedMin,
+            wakeMin: wakeMin,
+            startMin: startMin,
+            today: today
+        ) else { return false }
+
+        return config.days.contains(String(sleepWeekday))
+    }
+
+    private func catchupWeekday(
+        nowMin: Int,
+        bedMin: Int,
+        wakeMin: Int,
+        startMin: Int,
+        today: Int
+    ) -> Int? {
+        if time(nowMin, isInRangeFrom: startMin, to: bedMin) {
+            return startMin > bedMin && nowMin >= startMin ? nextWeekday(today) : today
+        }
+
+        if time(nowMin, isInRangeFrom: bedMin, to: wakeMin) {
+            return bedMin > wakeMin && nowMin < wakeMin ? previousWeekday(today) : today
+        }
+
+        return nil
+    }
+
+    private func minutes(from value: String) -> Int? {
+        let parts = value.split(separator: ":")
+        guard parts.count == 2,
+              let hour = Int(parts[0]),
+              let minute = Int(parts[1]),
+              (0...23).contains(hour),
+              (0...59).contains(minute) else { return nil }
+        return hour * 60 + minute
+    }
+
+    private func minutes(in date: Date) -> Int {
+        let cal = Calendar.current
+        return cal.component(.hour, from: date) * 60 + cal.component(.minute, from: date)
+    }
+
+    private func time(_ nowMin: Int, isInRangeFrom startMin: Int, to endMin: Int) -> Bool {
+        if startMin < endMin {
+            return nowMin >= startMin && nowMin < endMin
+        }
+        if startMin > endMin {
+            return nowMin >= startMin || nowMin < endMin
+        }
+        return false
+    }
+
+    private func isoWeekday(for date: Date) -> Int {
+        let weekday = Calendar.current.component(.weekday, from: date)
+        return weekday == 1 ? 7 : weekday - 1
+    }
+
+    private func previousWeekday(_ weekday: Int) -> Int {
+        weekday == 1 ? 7 : weekday - 1
+    }
+
+    private func nextWeekday(_ weekday: Int) -> Int {
+        weekday == 7 ? 1 : weekday + 1
+    }
+
     @discardableResult
     private func shellRun(_ path: String, _ args: [String]) -> Int32 {
         let proc = Process()
@@ -247,6 +336,137 @@ class ConfigManager: ObservableObject {
     }
 }
 
+// MARK: - Notification Scheduler
+
+final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .list, .sound])
+    }
+}
+
+class NotificationScheduler {
+    static let shared = NotificationScheduler()
+    private let center = UNUserNotificationCenter.current()
+    private let presenter = ForegroundNotificationPresenter()
+
+    private init() {
+        center.delegate = presenter
+    }
+
+    func requestPermission() {
+        center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    }
+
+    func clearPendingReminders() {
+        center.getPendingNotificationRequests { [center] requests in
+            let ids = requests
+                .map(\.identifier)
+                .filter { $0.hasPrefix("winddown-") }
+            if !ids.isEmpty {
+                center.removePendingNotificationRequests(withIdentifiers: ids)
+            }
+        }
+    }
+
+    @discardableResult
+    func sendImmediateNotification(title: String, subtitle: String, body: String) -> Bool {
+        guard ensureNotificationAuthorization() else { return false }
+
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.subtitle = subtitle
+        content.body = body
+        content.sound = .default
+        content.threadIdentifier = "cat-bedtime-winddown"
+
+        let id = "daemon-\(UUID().uuidString)"
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: nil)
+        let semaphore = DispatchSemaphore(value: 0)
+        var succeeded = true
+
+        center.add(request) { error in
+            if let error = error {
+                writeStderr("native notification failed: \(error.localizedDescription)")
+                succeeded = false
+            }
+            semaphore.signal()
+        }
+
+        guard semaphore.wait(timeout: .now() + 5) == .success else {
+            writeStderr("native notification timed out")
+            return false
+        }
+        return succeeded
+    }
+
+    private func ensureNotificationAuthorization() -> Bool {
+        let semaphore = DispatchSemaphore(value: 0)
+        var allowed = false
+        var denialReason: String?
+        let notificationCenter = center
+
+        notificationCenter.getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .authorized, .provisional:
+                allowed = true
+            case .notDetermined:
+                notificationCenter.requestAuthorization(options: [.alert, .sound]) { granted, error in
+                    if let error = error {
+                        denialReason = "notification authorization request failed: \(error.localizedDescription)"
+                    } else if !granted {
+                        denialReason = "notification authorization was not granted"
+                    }
+                    allowed = granted
+                    semaphore.signal()
+                }
+                return
+            case .denied:
+                denialReason = "notification authorization denied"
+                allowed = false
+            @unknown default:
+                denialReason = "notification authorization status is unsupported"
+                allowed = false
+            }
+            semaphore.signal()
+        }
+
+        guard semaphore.wait(timeout: .now() + 5) == .success else {
+            writeStderr("notification settings lookup timed out")
+            return false
+        }
+        if let denialReason {
+            writeStderr(denialReason)
+        }
+        return allowed
+    }
+}
+
+private enum NotificationCommand {
+    static func exitIfRequested(arguments: [String] = CommandLine.arguments) {
+        let args = Array(arguments.dropFirst())
+        guard args.first == "--notify" else { return }
+        guard args.count >= 4 else {
+            writeStderr("usage: zzz-app --notify <title> <subtitle> <body>")
+            Darwin.exit(64)
+        }
+
+        let ok = NotificationScheduler.shared.sendImmediateNotification(
+            title: args[1],
+            subtitle: args[2],
+            body: args[3]
+        )
+        Darwin.exit(ok ? 0 : 1)
+    }
+}
+
+private func writeStderr(_ message: String) {
+    if let data = "\(message)\n".data(using: .utf8) {
+        FileHandle.standardError.write(data)
+    }
+}
+
 // MARK: - Navigation
 
 enum AppScreen: Int, CaseIterable {
@@ -257,16 +477,24 @@ class AppState: ObservableObject {
     @Published var screen: AppScreen = .welcome
 }
 
+class WindowSizeStore: ObservableObject {
+    static let shared = WindowSizeStore()
+    @Published var size = CGSize(width: 420, height: 560)
+}
+
 // MARK: - Cat Image Loader
 
 func loadCatImage() -> NSImage? {
     let home = FileManager.default.homeDirectoryForCurrentUser.path
     let binDir = (Bundle.main.bundlePath as NSString).deletingLastPathComponent
-    let paths = [
-        "\(home)/.timetosleep/assets/猫猫形象图.png",
-        // dev: bin/Cat Bedtime.app -> bin/ -> project root/assets/
-        (binDir as NSString).appendingPathComponent("../assets/猫猫形象图.png"),
-    ]
+    var paths: [String] = []
+    if let bundled = Bundle.main.resourceURL?
+        .appendingPathComponent("assets/猫猫形象图.png").path {
+        paths.append(bundled)
+    }
+    paths.append("\(home)/.timetosleep/assets/猫猫形象图.png")
+    // dev: bin/Cat Bedtime.app -> bin/ -> project root/assets/
+    paths.append((binDir as NSString).appendingPathComponent("../assets/猫猫形象图.png"))
     for p in paths {
         let resolved = (p as NSString).standardizingPath
         if let img = NSImage(contentsOfFile: resolved) { return img }
@@ -340,17 +568,18 @@ struct LampButtonStyle: ButtonStyle {
 
 struct GhostButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 10)
         configuration.label
             .font(Lamp.rounded(13, weight: .bold))
             .foregroundColor(Lamp.sandMuted)
             .padding(.vertical, 10)
             .padding(.horizontal, 14)
             .frame(maxWidth: .infinity)
-            .background(configuration.isPressed ? Lamp.glass2 : Color.clear)
+            .background(configuration.isPressed ? Lamp.glass2 : Lamp.glass1.opacity(0.001))
             .cornerRadius(10)
+            .contentShape(shape)
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Lamp.borderDefault, lineWidth: 1)
+                shape.stroke(Lamp.borderDefault, lineWidth: 1)
             )
     }
 }
@@ -395,37 +624,35 @@ struct WelcomeView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ProgressDots(total: 3, current: 1)
-                .padding(.bottom, 24)
+                .padding(.bottom, 18)
 
             Text("你打算领养这只小猫吗？")
                 .font(Lamp.rounded(28, weight: .bold))
                 .foregroundColor(Lamp.creamText)
-                .padding(.bottom, 16)
+                .padding(.bottom, 8)
 
-            Text("每天到了约定时间，它都会住进你的电脑。\n为了保证它的睡眠，你就不能使用电脑了哦。")
+            Text("每天到了约定时间，它都会住进你的电脑\n为了保证它的睡眠，你就不能使用电脑了哦")
                 .font(Lamp.rounded(15, weight: .medium))
                 .foregroundColor(Lamp.sandMuted)
                 .lineSpacing(6)
-                .padding(.bottom, 8)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.bottom, 16)
 
-            Text("这不是普通提醒，而是你和猫猫之间的一份小契约。")
-                .font(Lamp.rounded(13))
-                .foregroundColor(Lamp.duskDim)
-                .padding(.bottom, 28)
-
-            Spacer()
-
-            if let img = catImage {
-                HStack {
-                    Spacer()
-                    Image(nsImage: img)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 200, height: 200)
-                    Spacer()
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                if let img = catImage {
+                    HStack {
+                        Spacer()
+                        Image(nsImage: img)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(height: 220)
+                        Spacer()
+                    }
                 }
-                .padding(.bottom, 32)
+                Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             HStack {
                 Spacer()
@@ -433,12 +660,11 @@ struct WelcomeView: View {
                     .buttonStyle(LampButtonStyle())
                 Spacer()
             }
-
-            Spacer()
         }
-        .padding(.top, 52)
+        .padding(.top, 28)
         .padding(.horizontal, 28)
-        .padding(.bottom, 28)
+        .padding(.bottom, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -461,7 +687,7 @@ struct ScheduleConfigView: View {
                 Text("猫猫休眠时间")
                     .font(Lamp.rounded(17, weight: .semibold))
                     .foregroundColor(Lamp.creamText)
-                Text("千万不要太晚哦，猫猫也需要一个好睡眠。")
+                Text("千万不要太晚哦，猫猫也需要一个好睡眠")
                     .font(Lamp.rounded(13))
                     .foregroundColor(Lamp.duskDim)
                     .italic()
@@ -516,6 +742,7 @@ struct ScheduleConfigView: View {
         .padding(.top, 52)
         .padding(.horizontal, 28)
         .padding(.bottom, 28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func syncConfigFromPickers() {
@@ -573,9 +800,10 @@ struct AgreementView: View {
             Text("请键入\u{201C}" + requiredPhrase + "\u{201D}完成领养协议")
                 .font(Lamp.rounded(13, weight: .medium))
                 .foregroundColor(Lamp.amberMoon)
+                .textSelection(.enabled)
                 .padding(.bottom, 10)
 
-            TextField("在此键入上面的句子...", text: $pledge, onCommit: tryConfirm)
+            TextField("在此键入上面的句子", text: $pledge, onCommit: tryConfirm)
                 .textFieldStyle(.plain)
                 .font(Lamp.rounded(15, weight: .medium))
                 .foregroundColor(Lamp.creamText)
@@ -603,6 +831,7 @@ struct AgreementView: View {
         .padding(.top, 52)
         .padding(.horizontal, 28)
         .padding(.bottom, 28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func tryConfirm() {
@@ -673,10 +902,10 @@ struct LockPreviewView: View {
 
     var body: some View {
         ZStack {
-            Lamp.nightSurface.ignoresSafeArea()
+            Lamp.nightSurface
             VStack(spacing: 12) {
                 Spacer()
-                Text("正在播放锁屏效果预览...")
+                Text("正在播放锁屏效果预览")
                     .font(Lamp.rounded(14, weight: .medium))
                     .foregroundColor(Lamp.sandMuted)
                 Spacer()
@@ -688,10 +917,15 @@ struct LockPreviewView: View {
 
     private func findOverlayBin() -> String? {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
-        let candidates = [
-            "\(home)/.timetosleep/bin/zzz-overlay",
-            (Bundle.main.bundlePath as NSString).deletingLastPathComponent + "/zzz-overlay",
-        ]
+        let binDir = (Bundle.main.bundlePath as NSString).deletingLastPathComponent
+        var candidates: [String] = []
+        if let bundled = Bundle.main.resourceURL?
+            .appendingPathComponent("bin/zzz-overlay").path {
+            candidates.append(bundled)
+        }
+        candidates.append("\(home)/.timetosleep/bin/zzz-overlay")
+        // dev: bin/Cat Bedtime.app -> bin/zzz-overlay
+        candidates.append((binDir as NSString).appendingPathComponent("zzz-overlay"))
         for p in candidates {
             let resolved = (p as NSString).standardizingPath
             if FileManager.default.isExecutableFile(atPath: resolved) {
@@ -840,6 +1074,7 @@ struct DashboardView: View {
         .padding(.top, 46)
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .sheet(isPresented: $showDelay) {
             DelayPopover(isPresented: $showDelay)
                 .environmentObject(mgr)
@@ -937,7 +1172,7 @@ struct DelayPopover: View {
                 .foregroundColor(Lamp.sandMuted)
                 .padding(.bottom, 6)
 
-            TextField("今晚有特殊情况是因为...", text: $reason)
+            TextField("今晚有特殊情况是因为", text: $reason)
                 .textFieldStyle(.plain)
                 .font(Lamp.rounded(13))
                 .foregroundColor(Lamp.creamText)
@@ -1048,6 +1283,7 @@ struct DelayPopover: View {
 struct ContentView: View {
     @StateObject private var state = AppState()
     @StateObject private var mgr = ConfigManager.shared
+    @StateObject private var windowSize = WindowSizeStore.shared
 
     @State private var activeDays: Set<String> = ["1","2","3","4","5"]
     @State private var bedtime: Date = parseTime("23:00")
@@ -1057,36 +1293,26 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            Lamp.nightSurface.ignoresSafeArea()
+            Lamp.nightSurface
 
-            switch state.screen {
-            case .welcome:
-                WelcomeView(catImage: catImage)
-            case .config:
-                ScheduleConfigView(activeDays: $activeDays, bedtime: $bedtime, wakeup: $wakeup)
-            case .agreement:
-                AgreementView()
-            case .lockPreview:
-                LockPreviewView(catImage: catImage)
-            case .dashboard:
-                DashboardView(activeDays: $activeDays, bedtime: $bedtime, wakeup: $wakeup)
-            }
-
-            // Page number overlay (onboarding only)
-            if state.screen.rawValue < AppScreen.lockPreview.rawValue {
-                VStack {
-                    HStack {
-                        Spacer()
-                        Text("\(state.screen.rawValue + 1) / 3")
-                            .font(Lamp.rounded(12))
-                            .foregroundColor(Lamp.duskDim)
-                            .padding(.top, 14)
-                            .padding(.trailing, 18)
-                    }
-                    Spacer()
+            Group {
+                switch state.screen {
+                case .welcome:
+                    WelcomeView(catImage: catImage)
+                case .config:
+                    ScheduleConfigView(activeDays: $activeDays, bedtime: $bedtime, wakeup: $wakeup)
+                case .agreement:
+                    AgreementView()
+                case .lockPreview:
+                    LockPreviewView(catImage: catImage)
+                case .dashboard:
+                    DashboardView(activeDays: $activeDays, bedtime: $bedtime, wakeup: $wakeup)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
         }
+        .frame(width: windowSize.size.width, height: windowSize.size.height)
         .environmentObject(state)
         .environmentObject(mgr)
         .onAppear {
@@ -1120,28 +1346,69 @@ func formatTime(_ date: Date) -> String {
 
 func resizeWindow(width: CGFloat, height: CGFloat) {
     DispatchQueue.main.async {
+        WindowSizeStore.shared.size = CGSize(width: width, height: height)
         guard let window = NSApplication.shared.windows.first else { return }
-        let frame = window.frame
-        let newFrame = NSRect(
-            x: frame.midX - width / 2,
-            y: frame.midY - height / 2,
-            width: width,
-            height: height
-        )
+        lockWindowContentSize(window, width: width, height: height, center: false, animated: false)
+    }
+}
+
+func lockWindowContentSize(_ window: NSWindow, width: CGFloat, height: CGFloat, center: Bool, animated: Bool) {
+    let contentSize = NSSize(width: width, height: height)
+    let frameSize = window.frameRect(forContentRect: NSRect(origin: .zero, size: contentSize)).size
+    window.minSize = frameSize
+    window.maxSize = frameSize
+    window.contentMinSize = contentSize
+    window.contentMaxSize = contentSize
+
+    let currentFrame = window.frame
+    let visibleFrame = NSScreen.main?.visibleFrame ?? currentFrame
+    let midX = center ? visibleFrame.midX : currentFrame.midX
+    let midY = center ? visibleFrame.midY : currentFrame.midY
+    var newFrame = NSRect(
+        x: midX - frameSize.width / 2,
+        y: midY - frameSize.height / 2,
+        width: frameSize.width,
+        height: frameSize.height
+    )
+
+    if !center {
+        if newFrame.minX < visibleFrame.minX { newFrame.origin.x = visibleFrame.minX }
+        if newFrame.maxX > visibleFrame.maxX { newFrame.origin.x = visibleFrame.maxX - newFrame.width }
+        if newFrame.minY < visibleFrame.minY { newFrame.origin.y = visibleFrame.minY }
+        if newFrame.maxY > visibleFrame.maxY { newFrame.origin.y = visibleFrame.maxY - newFrame.height }
+    }
+
+    if animated {
         window.animator().setFrame(newFrame, display: true, animate: true)
+    } else {
+        window.setFrame(newFrame, display: true)
     }
 }
 
 // MARK: - App Bootstrap (AppKit)
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+final class FillHostingView<Content: View>: NSHostingView<Content> {
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: NSView.noIntrinsicMetric, height: NSView.noIntrinsicMetric)
+    }
+}
+
+class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var window: NSWindow!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        installMainMenu()
+        installAppIcon()
+        NotificationScheduler.shared.requestPermission()
+
         let mgr = ConfigManager.shared
+        if mgr.configExists {
+            NotificationScheduler.shared.clearPendingReminders()
+        }
         let isDashboard = mgr.configExists
         let initialWidth: CGFloat = isDashboard ? 520 : 420
-        let initialHeight: CGFloat = 600
+        let initialHeight: CGFloat = isDashboard ? 600 : 560
+        WindowSizeStore.shared.size = CGSize(width: initialWidth, height: initialHeight)
 
         let contentView = ContentView()
 
@@ -1151,23 +1418,131 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             backing: .buffered,
             defer: false
         )
-        window.center()
         window.title = "Cat Bedtime"
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.backgroundColor = Lamp.nsNightSurface
         window.appearance = NSAppearance(named: .darkAqua)
         window.isMovableByWindowBackground = true
-        window.contentView = NSHostingView(rootView: contentView)
+        window.delegate = self
+
+        if let minimizeButton = window.standardWindowButton(.miniaturizeButton) {
+            minimizeButton.target = self
+            minimizeButton.action = #selector(hideWindowToDockIcon(_:))
+        }
+
+        let hostingView = FillHostingView(rootView: contentView)
+        hostingView.frame = NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight)
+        window.contentView = hostingView
+        window.isReleasedWhenClosed = false
+        lockWindowContentSize(window, width: initialWidth, height: initialHeight, center: true, animated: false)
         window.makeKeyAndOrderFront(nil)
+        DispatchQueue.main.async {
+            lockWindowContentSize(self.window, width: initialWidth, height: initialHeight, center: true, animated: false)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            lockWindowContentSize(self.window, width: initialWidth, height: initialHeight, center: true, animated: false)
+        }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidBecomeActive(_:)),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        return confirmQuit() ? .terminateNow : .terminateCancel
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return false
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showMainWindow()
         return true
+    }
+
+    @objc func applicationDidBecomeActive(_ notification: Notification) {
+        if !window.isVisible {
+            showMainWindow()
+        }
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        hideWindowToDockIcon(sender)
+        return false
+    }
+
+    @objc private func hideWindowToDockIcon(_ sender: Any?) {
+        window.orderOut(sender)
+    }
+
+    private func showMainWindow() {
+        if window.isMiniaturized {
+            window.deminiaturize(nil)
+        }
+        window.makeKeyAndOrderFront(nil)
+        NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+
+    private func installAppIcon() {
+        guard let iconURL = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+              let icon = NSImage(contentsOf: iconURL) else { return }
+        NSApplication.shared.applicationIconImage = icon
+    }
+
+    private func confirmQuit() -> Bool {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.messageText = "确定要退出 Cat Bedtime 吗？"
+        alert.informativeText = "退出只会关闭设置窗口\n睡眠时间和后台定时任务会继续保留，到点仍会锁屏"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "退出")
+        alert.addButton(withTitle: "取消")
+
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    private func installMainMenu() {
+        let mainMenu = NSMenu()
+
+        let appMenuItem = NSMenuItem()
+        mainMenu.addItem(appMenuItem)
+        let appMenu = NSMenu()
+        appMenuItem.submenu = appMenu
+        appMenu.addItem(NSMenuItem(
+            title: "Quit Cat Bedtime",
+            action: #selector(NSApplication.terminate(_:)),
+            keyEquivalent: "q"
+        ))
+
+        let editMenuItem = NSMenuItem()
+        mainMenu.addItem(editMenuItem)
+        let editMenu = NSMenu(title: "Edit")
+        editMenuItem.submenu = editMenu
+
+        editMenu.addItem(NSMenuItem(title: "Undo", action: Selector(("undo:")), keyEquivalent: "z"))
+
+        let redo = NSMenuItem(title: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
+        redo.keyEquivalentModifierMask = [.command, .shift]
+        editMenu.addItem(redo)
+
+        editMenu.addItem(.separator())
+        editMenu.addItem(NSMenuItem(title: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x"))
+        editMenu.addItem(NSMenuItem(title: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c"))
+        editMenu.addItem(NSMenuItem(title: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v"))
+        editMenu.addItem(NSMenuItem(title: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a"))
+
+        NSApplication.shared.mainMenu = mainMenu
     }
 }
 
 // MARK: - main
+
+NotificationCommand.exitIfRequested()
 
 let delegate = AppDelegate()
 NSApplication.shared.delegate = delegate

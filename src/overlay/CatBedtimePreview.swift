@@ -694,7 +694,7 @@ private final class CatBedtimePreviewView: NSView {
             .foregroundColor: NSColor(srgbRed: 1.0, green: 0.81, blue: 0.50, alpha: 0.86 * alpha),
             .paragraphStyle: paragraph,
         ]
-        NSAttributedString(string: "猫猫睡着了。电脑被它占用了。", attributes: titleAttrs)
+        NSAttributedString(string: "猫猫睡着了。电脑被它占用了", attributes: titleAttrs)
             .draw(in: NSRect(x: bounds.minX + bounds.width * 0.12,
                              y: bounds.midY + bounds.height * 0.07,
                              width: bounds.width * 0.76,

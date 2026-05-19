@@ -13,3 +13,6 @@ assets/*.mp4
 # Compiled binaries
 bin/zzz-overlay
 bin/Cat Bedtime.app/
+
+# Release artifacts
+dist/

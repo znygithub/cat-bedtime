@@ -42,6 +42,79 @@ _winddown_start() {
   minutes_to_time $start_min
 }
 
+_time_in_range() {
+  local now_min="$1" start_min="$2" end_min="$3"
+  if (( start_min < end_min )); then
+    (( now_min >= start_min && now_min < end_min ))
+  elif (( start_min > end_min )); then
+    (( now_min >= start_min || now_min < end_min ))
+  else
+    return 1
+  fi
+}
+
+_previous_weekday() {
+  local weekday="$1"
+  if (( weekday == 1 )); then
+    echo 7
+  else
+    echo $(( weekday - 1 ))
+  fi
+}
+
+_next_weekday() {
+  local weekday="$1"
+  if (( weekday == 7 )); then
+    echo 1
+  else
+    echo $(( weekday + 1 ))
+  fi
+}
+
+_catchup_weekday() {
+  local now_min="$1" bed_min="$2" wake_min="$3" start_min="$4" current_weekday="$5"
+
+  if _time_in_range "$now_min" "$start_min" "$bed_min"; then
+    if (( start_min > bed_min && now_min >= start_min )); then
+      _next_weekday "$current_weekday"
+    else
+      echo "$current_weekday"
+    fi
+    return 0
+  fi
+
+  if _time_in_range "$now_min" "$bed_min" "$wake_min"; then
+    if (( bed_min > wake_min && now_min < wake_min )); then
+      _previous_weekday "$current_weekday"
+    else
+      echo "$current_weekday"
+    fi
+    return 0
+  fi
+
+  return 1
+}
+
+_should_kickstart_now() {
+  local bedtime wakeup winddown
+  bedtime=$(config_get "bedtime")
+  wakeup=$(config_get "wakeup")
+  winddown=$(config_get "winddown_minutes")
+  if ! [[ "${winddown:-}" =~ ^[0-9]+$ ]] || (( winddown < 1 )); then
+    winddown=30
+  fi
+
+  local now_min bed_min wake_min start_min weekday
+  now_min=$(now_minutes)
+  bed_min=$(time_to_minutes "$bedtime")
+  wake_min=$(time_to_minutes "$wakeup")
+  start_min=$(( bed_min - winddown ))
+  (( start_min < 0 )) && (( start_min += 1440 ))
+
+  weekday=$(_catchup_weekday "$now_min" "$bed_min" "$wake_min" "$start_min" "$(today_weekday)") || return 1
+  config_get_array "days" | grep -q "^${weekday}$"
+}
+
 schedule_install() {
   local daemon_path
   daemon_path=$(_script_path "daemon.sh")
@@ -101,6 +174,9 @@ PLIST
   launchctl bootout "$gui/$LEGACY_BOOTCHECK_LABEL" 2>/dev/null || true
   rm -f "$LEGACY_BOOTCHECK_PLIST"
   launchctl bootstrap "$gui" "$PLIST_PATH"
+  if _should_kickstart_now; then
+    launchctl kickstart -k "$gui/$AGENT_LABEL" 2>/dev/null || true
+  fi
 }
 
 schedule_uninstall() {

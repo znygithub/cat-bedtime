@@ -5,6 +5,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT="${1:-$SCRIPT_DIR/../../bin/zzz-overlay}"
 
+source "$SCRIPT_DIR/../signing.sh"
+
 echo "Compiling LockScreen overlay (universal: arm64 + x86_64)..."
 
 TMP_DIR="$(mktemp -d)"
@@ -27,3 +29,4 @@ lipo -create -output "$OUTPUT" \
 chmod +x "$OUTPUT"
 echo "Built: $OUTPUT"
 lipo -info "$OUTPUT"
+macos_codesign_target "$OUTPUT"

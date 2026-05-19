@@ -16,16 +16,16 @@ run_init() {
     "${BOLD}你打算领养这只小猫吗？${RESET}" \
     "" \
     "每天到了约定时间，" \
-    "它都会住进你的电脑。" \
+    "它都会住进你的电脑" \
     "" \
     "为了保证它的睡眠，" \
-    "你就不能使用电脑了哦。")"
+    "你就不能使用电脑了哦")"
 
   sleep 1
 
   # ── bedtime ──
   local bedtime
-  ui_dim "千万不要太晚哦，猫猫也需要一个好睡眠。"
+  ui_dim "千万不要太晚哦，猫猫也需要一个好睡眠"
   ui_input_time "猫猫几点才能睡觉？" bedtime "23:00"
 
   # ── wakeup ──
@@ -42,7 +42,7 @@ run_init() {
     "周五:5:selected" \
     "周六:6" \
     "周日:7"
-  ui_dim "其他日子猫猫自己在外面浪。"
+  ui_dim "其他日子猫猫自己在外面浪"
 
   # ── wind-down ──
   # Two fixed reminders before bedtime: T-15min ("猫猫开始打哈欠了") and
@@ -68,14 +68,14 @@ run_init() {
     "  来睡日子：${BOLD}$days_display${RESET}" \
     "  睡前 ${BOLD}15${RESET} 分钟和 ${BOLD}1${RESET} 分钟会提醒你" \
     "" \
-    "  ${C_RED}我愿意遵守承诺让猫猫好好休息。${RESET}")"
+    "  ${C_RED}我愿意遵守承诺让猫猫好好休息${RESET}")"
 
   ui_blank
 
   # ── activation phrase (type-to-confirm) ──
   if ! ui_type_confirm "最后一步：请键入下面这句完成领养协议：" "我愿意遵守承诺让猫猫好好休息"; then
     ui_blank
-    ui_error "未正确输入，设置已取消。"
+    ui_error "未正确输入，设置已取消"
     ui_dim "想好了再来：zzz init"
     ui_blank
     return 1
@@ -121,9 +121,9 @@ ENDJSON
   ui_box "$(printf '%b\n' \
     "${C_GREEN}${BOLD}领养完成！${RESET}" \
     "" \
-    "猫猫已经记住你家地址了。" \
-    "今晚 ${BOLD}$bedtime${RESET}，它会住进你的电脑睡觉。" \
-    "睡前 ${BOLD}15${RESET} 分钟和 ${BOLD}1${RESET} 分钟会提醒你。" \
+    "猫猫已经记住你家地址了" \
+    "今晚 ${BOLD}$bedtime${RESET}，它会住进你的电脑睡觉" \
+    "睡前 ${BOLD}15${RESET} 分钟和 ${BOLD}1${RESET} 分钟会提醒你" \
     "" \
     "${DIM}输入 zzz 查看今晚状态${RESET}")"
   ui_blank

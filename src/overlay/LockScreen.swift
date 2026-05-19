@@ -120,7 +120,11 @@ enum LockWindowMath {
 enum CatAnimationAsset {
     static func locate() -> URL? {
         let home = NSHomeDirectory()
+        let executablePath = CommandLine.arguments[0] as NSString
+        let resourcesPath = executablePath.deletingLastPathComponent + "/.."
         let candidates = [
+            (resourcesPath as NSString).appendingPathComponent("assets/cat-bedtime.mov"),
+            (resourcesPath as NSString).appendingPathComponent("assets/cat-bedtime.mp4"),
             "\(home)/.timetosleep/assets/cat-bedtime.mov",
             "\(home)/.timetosleep/assets/cat-bedtime.mp4",
         ]
@@ -574,6 +578,10 @@ class LockAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply { .terminateCancel }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
 }
 
 // MARK: - Main
