@@ -11,11 +11,37 @@
 
 ## Why this exists
 
-- “Just one more minute” is easier to resist when a cat needs sleep on your screen
-- You need a lock that **sticks** (all displays, relaunches if killed)
-- You want **gentle wind-down** (notifications, dimmer screen, lower volume), not a sudden blackout
+The hard part at night isn’t knowing you should sleep — it’s **closing the laptop**. One more message, one more tab, and the evening disappears.
 
-See [PRODUCT_GOALS.md](PRODUCT_GOALS.md) for product principles.
+Cat Bedtime trades a punitive system lock for something softer: **a cat actually comes to sleep on your screen**. That makes it easier to walk away — and when bedtime hits, the lock really sticks (all displays, relaunches if the overlay is killed).
+
+---
+
+## Design ideas
+
+### Adoption, not “enable lock screen”
+
+First run is **cat adoption**: bedtime, wake-up, visit days, and typing a short pledge to let the cat rest well. It’s a small commitment — easier to keep than flipping a security switch.
+
+### Approach gently, then lock firmly
+
+Before bedtime: yawns, notifications, brightness and volume fading — time to wrap up. At bedtime the cat takes over the screen.
+
+### The lock-screen animation in three acts (`cat-bedtime.mov`)
+
+A transparent cat video plays fullscreen. Each beat has a meaning:
+
+| Scene | Meaning |
+| --- | --- |
+| **Cat drags the bed in** | Bedtime — the cat is moving in with its bed |
+| **Cat pulls the lamp cord** | Lights out — **lock screen is on**; the Mac belongs to the cat now |
+| **Cat falls asleep** | The cat needs real rest — **so do you**; step away from the computer |
+
+After the animation, the cat stays on screen until wake-up time, with a countdown and a quiet “shh, the cat is asleep.”
+
+### You can ask for a night off
+
+`zzz tonight off` or **Come later** in the app — but you tell the cat why tonight is special.
 
 ---
 
@@ -95,11 +121,10 @@ The cat lock-screen video `assets/cat-bedtime.mov` is bundled in release archive
 
 ---
 
-## Docs
+## Docs (developers)
 
 | Doc | Purpose |
 | --- | --- |
-| [PRODUCT_GOALS.md](PRODUCT_GOALS.md) | Product goals |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture |
 | [RELEASE.md](RELEASE.md) | Release signing & notarization |
 | [PITFALLS.md](PITFALLS.md) | Known pitfalls |
