@@ -266,7 +266,13 @@ ui_input_time() {
       eval "$var_name='$parsed'"
       return 0
     fi
-    ui_error "没听懂这个时间，试试这些写法：23、23:00、23点、23点半、11pm"
+    if [ -f "$(dirname "${BASH_SOURCE[0]}")/i18n.sh" ]; then
+      # shellcheck source=/dev/null
+      source "$(dirname "${BASH_SOURCE[0]}")/i18n.sh"
+      ui_error "$(msg ui.error.time_parse)"
+    else
+      ui_error "Couldn't parse that time. Try: 23, 23:00, 11pm"
+    fi
   done
 }
 
@@ -296,7 +302,9 @@ ui_multiselect() {
   local cursor=0
 
   ui_blank
-  ui_print "  ${C_PURPLE}?${RESET} ${BOLD}$prompt${RESET}  ${DIM}(空格切换, 回车确认)${RESET}"
+  local _ms_hint="(space toggle, enter confirm)"
+  if declare -F msg &>/dev/null; then _ms_hint="$(msg ui.multiselect.hint)"; fi
+  ui_print "  ${C_PURPLE}?${RESET} ${BOLD}$prompt${RESET}  ${DIM}${_ms_hint}${RESET}"
 
   # save cursor position
   tput sc 2>/dev/null || true
@@ -363,7 +371,9 @@ ui_multiselect() {
   # show summary
   local summary
   summary=$(IFS=、; echo "${display[*]}")
-  ui_print "  ${C_GREEN}✓${RESET} ${DIM}已选：${summary}${RESET}"
+  local _sel_fmt="Selected: %s"
+  if declare -F msg &>/dev/null; then _sel_fmt="$(msg ui.selected)"; fi
+  ui_print "  ${C_GREEN}✓${RESET} ${DIM}$(printf "$_sel_fmt" "$summary")${RESET}"
 }
 
 # Single select
@@ -382,7 +392,9 @@ ui_select() {
   local cursor=0
 
   ui_blank
-  ui_print "  ${C_PURPLE}?${RESET} ${BOLD}$prompt${RESET}  ${DIM}(↑↓选择, 回车确认)${RESET}"
+  local _sel_hint="(↑↓ select, enter confirm)"
+  if declare -F msg &>/dev/null; then _sel_hint="$(msg ui.select.hint)"; fi
+  ui_print "  ${C_PURPLE}?${RESET} ${BOLD}$prompt${RESET}  ${DIM}${_sel_hint}${RESET}"
 
   for (( i=0; i<count; i++ )); do echo; done
   tput sc 2>/dev/null || true
@@ -419,7 +431,9 @@ ui_select() {
   done
 
   eval "$var_name='${values[$cursor]}'"
-  ui_print "  ${C_GREEN}✓${RESET} ${DIM}已选：${labels[$cursor]}${RESET}"
+  local _sel_fmt2="Selected: %s"
+  if declare -F msg &>/dev/null; then _sel_fmt2="$(msg ui.selected)"; fi
+  ui_print "  ${C_GREEN}✓${RESET} ${DIM}$(printf "$_sel_fmt2" "${labels[$cursor]}")${RESET}"
 }
 
 # Confirm (y/N)
@@ -447,9 +461,13 @@ ui_type_confirm() {
     if (( try == 1 )); then
       ui_print "  ${BOLD}$prompt${RESET}"
     else
-      ui_print "  ${C_YELLOW}再试一次（第 ${try}/${max_tries} 次）${RESET}"
+      local _retry_msg="Try again (${try}/${max_tries})"
+      if declare -F msg &>/dev/null; then _retry_msg="$(msg ui.retry "$try" "$max_tries")"; fi
+      ui_print "  ${C_YELLOW}${_retry_msg}${RESET}"
     fi
-    ui_print "  ${DIM}请输入：${RESET}${C_YELLOW}$phrase${RESET}"
+    local _type_prompt="Type:"
+    if declare -F msg &>/dev/null; then _type_prompt="$(msg ui.type_confirm.prompt)"; fi
+    ui_print "  ${DIM}${_type_prompt}${RESET}${C_YELLOW}$phrase${RESET}"
     ui_blank
     local answer
     if [ -t 0 ]; then
@@ -467,7 +485,11 @@ ui_type_confirm() {
       return 0
     fi
     if (( try < max_tries )); then
-      ui_error "输入不匹配，请完整输入上面的确认文字"
+      if declare -F msg &>/dev/null; then
+        ui_error "$(msg ui.type_confirm.mismatch)"
+      else
+        ui_error "Text doesn't match. Type the full confirmation."
+      fi
     fi
   done
   return 1

@@ -441,7 +441,7 @@ class CatLockScreenView: NSView {
             .paragraphStyle: paragraph,
         ]
         NSAttributedString(
-            string: "缺少猫猫动画素材\n~/.timetosleep/assets/cat-bedtime.mov",
+            string: L10n.t("lock.missing_asset"),
             attributes: attrs
         ).draw(in: card.insetBy(dx: 20, dy: 26))
     }
@@ -476,7 +476,7 @@ class CatLockScreenView: NSView {
             .paragraphStyle: leftPS,
         ]
         drawVisuallyLeftAligned(
-            NSAttributedString(string: "嘘，猫猫睡了，安静", attributes: quoteAttrs),
+            NSAttributedString(string: L10n.t("lock.quote"), attributes: quoteAttrs),
             x: margin,
             y: clockY - 40,
             width: textWidth,
@@ -486,7 +486,7 @@ class CatLockScreenView: NSView {
         let mins = LockWindowMath.minutesUntilWakeup(config: config)
         let h = mins / 60
         let m = mins % 60
-        let countdown = h > 0 ? "还有 \(h) 小时 \(m) 分钟醒来" : "还有 \(m) 分钟醒来"
+        let countdown = L10n.countdownUntilWakeup(hours: h, minutes: m)
 
         let infoAttrs: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 17, weight: .light),
@@ -495,7 +495,7 @@ class CatLockScreenView: NSView {
             .paragraphStyle: leftPS,
         ]
         drawVisuallyLeftAligned(
-            NSAttributedString(string: "猫猫 \(config.wakeupTime) 起床 · \(countdown)", attributes: infoAttrs),
+            NSAttributedString(string: L10n.ts("lock.wakeup_line", config.wakeupTime, countdown), attributes: infoAttrs),
             x: margin,
             y: clockY - 72,
             width: textWidth,
@@ -524,7 +524,7 @@ class CatLockScreenView: NSView {
             .paragraphStyle: paragraph,
         ]
         NSAttributedString(
-            string: "异常时连按两下 ESC：重新校验时间，非锁机时段可退出",
+            string: L10n.t("lock.esc_hint"),
             attributes: attrs
         ).draw(in: NSRect(x: bounds.minX, y: bounds.minY + 26, width: bounds.width, height: 22))
     }
@@ -586,7 +586,12 @@ class LockAppDelegate: NSObject, NSApplicationDelegate {
 
 // MARK: - Main
 
-let app = NSApplication.shared
-let delegate = LockAppDelegate()
-app.delegate = delegate
-app.run()
+@main
+enum LockScreenMain {
+    static func main() {
+        let app = NSApplication.shared
+        let delegate = LockAppDelegate()
+        app.delegate = delegate
+        app.run()
+    }
+}

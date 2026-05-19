@@ -5,6 +5,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$ROOT_DIR/lib/config.sh"
+source "$ROOT_DIR/lib/i18n.sh"
 source "$ROOT_DIR/lib/stats.sh"
 source "$SCRIPT_DIR/media.sh"
 source "$SCRIPT_DIR/brightness.sh"
@@ -213,10 +214,10 @@ wind_down() {
 
   # First reminder: wind-down start (= "提前 N 分钟"，常见为 30 分钟)
   notify \
-    $'\xf0\x9f\x90\xbe  猫猫开始打哈欠了' \
-    "还有 ${total_min} 分钟到关灯" \
-    $'收尾这一小段就好' \
-    "知道啦"
+    "$(msg notify.winddown.title)" \
+    "$(msg notify.winddown.subtitle "$total_min")" \
+    "$(msg notify.winddown.body)" \
+    "$(msg notify.winddown.button)"
 
   if ! is_active_winddown_day; then
     log "Reminder sent; wind-down belongs to inactive weekday ($(active_weekday_for_winddown)), skipping lockdown."
@@ -276,10 +277,10 @@ wind_down() {
       brightness_restore; media_restore_volume; return 1
     fi
     notify \
-      $'\xf0\x9f\x92\xa4  它要去拉灯绳了' \
-      "一分钟后锁屏" \
-      $'手头的按个保存就好，今天到这' \
-      "好"
+      "$(msg notify.locksoon.title)" \
+      "$(msg notify.locksoon.subtitle)" \
+      "$(msg notify.locksoon.body)" \
+      "$(msg notify.locksoon.button)"
   fi
 
   # Final wait until exact bedtime

@@ -16,12 +16,14 @@ elif [ -f "$HOME/.timetosleep/lib/config.sh" ]; then
   LIB_DIR="$HOME/.timetosleep/lib"
   SRC_DIR="$HOME/.timetosleep/src/cli"
 else
+  # English fallback when lib/i18n is unavailable
   echo "Error: Cat Bedtime is not properly installed."
   echo "Run install.sh first or check your installation."
   exit 1
 fi
 
 source "$LIB_DIR/config.sh"
+source "$LIB_DIR/i18n.sh"
 source "$LIB_DIR/ui.sh"
 source "$LIB_DIR/stats.sh"
 
@@ -32,7 +34,7 @@ cmd_default() {
   if ! config_exists; then
     ui_blank
     ui_moon
-    ui_print "  ${DIM}还没有领养猫猫。运行 ${RESET}${BOLD}zzz init${RESET}${DIM} 开始${RESET}"
+    ui_print "  ${DIM}$(msg cli.not_configured)${RESET}"
     ui_blank
     return
   fi
@@ -52,15 +54,17 @@ cmd_default() {
   local mins=$(( remaining % 60 ))
   local eta
   if (( hours > 0 )); then
-    eta="${hours} 小时 ${mins} 分钟"
+    eta="$(msg cli.eta_hours "$hours" "$mins")"
   else
-    eta="${mins} 分钟"
+    eta="$(msg cli.eta_minutes "$mins")"
   fi
 
-  local active_today="否"
-  is_active_today && active_today="是"
+  local active_today
+  active_today="$(msg cli.no)"
+  is_active_today && active_today="$(msg cli.yes)"
 
-  local skipped_tonight="否"
+  local skipped_tonight
+  skipped_tonight="$(msg cli.no)"
   local skip_reason=""
   local today
   today=$(date +%Y-%m-%d)
@@ -68,7 +72,7 @@ cmd_default() {
     local skip_date
     skip_date=$(head -n 1 "$ZZZ_DIR/skip_tonight" 2>/dev/null || true)
     if [ "$skip_date" = "$today" ]; then
-      skipped_tonight="是"
+      skipped_tonight="$(msg cli.yes)"
       skip_reason=$(sed -n '2p' "$ZZZ_DIR/skip_tonight" 2>/dev/null || true)
     fi
   fi
@@ -76,29 +80,29 @@ cmd_default() {
   ui_blank
   ui_moon
 
-  if [ "$skipped_tonight" = "是" ]; then
+  if [ "$skipped_tonight" = "$(msg cli.yes)" ]; then
     ui_box "$(printf '%b\n' \
-      "${C_GRAY}猫猫今晚不来睡觉了${RESET}" \
+      "${C_GRAY}$(msg cli.skipped.title)${RESET}" \
       "" \
-      "  ${skip_reason:-它已经收到你的留言了}" \
-      "  明天 ${BOLD}${bedtime}${RESET} 再看日程")"
-  elif [ "$active_today" = "是" ] && (( remaining > 0 && remaining < 720 )); then
+      "  ${skip_reason:-$(msg cli.skipped.note)}" \
+      "  $(msg cli.skipped.tomorrow "$bedtime")")"
+  elif [ "$active_today" = "$(msg cli.yes)" ] && (( remaining > 0 && remaining < 720 )); then
     ui_box "$(printf '%b\n' \
-      "${BOLD}猫猫今晚 ${bedtime} 睡觉${RESET}" \
+      "${BOLD}$(msg cli.tonight.title "$bedtime")${RESET}" \
       "" \
-      "  离猫猫睡觉还有 ${BOLD}${C_YELLOW}${eta}${RESET}" \
-      "  提前 ${winddown} 分钟提醒你准备" \
-      "  猫猫早上 ${wakeup} 走")"
-  elif [ "$active_today" = "否" ]; then
+      "  $(msg cli.tonight.until "$eta")" \
+      "  $(msg cli.tonight.remind "$winddown")" \
+      "  $(msg cli.tonight.wakeup "$wakeup")")"
+  elif [ "$active_today" = "$(msg cli.no)" ]; then
     ui_box "$(printf '%b\n' \
-      "${C_GRAY}猫猫今天不用来睡觉，放松吧${RESET}" \
+      "${C_GRAY}$(msg cli.off_day)${RESET}" \
       "" \
-      "  来住日子请查看 ${BOLD}zzz config${RESET}")"
+      "  $(msg cli.off_day.hint)")"
   else
     ui_box "$(printf '%b\n' \
-      "${C_GREEN}猫猫今晚已经睡下了${RESET}" \
+      "${C_GREEN}$(msg cli.already_asleep)${RESET}" \
       "" \
-      "  明天 ${BOLD}${bedtime}${RESET} 再来")"
+      "  $(msg cli.tomorrow "$bedtime")")"
   fi
 
   ui_blank
@@ -117,15 +121,15 @@ cmd_status() {
   IFS='|' read -r total completed skipped installed <<< "$summary"
 
   if (( total > 0 )); then
-    ui_print "  ${BOLD}猫猫记录${RESET}"
+    ui_print "  ${BOLD}$(msg cli.stats.title)${RESET}"
     ui_print "  ${C_GRAY}────────────────────${RESET}"
-    ui_print "  总晚数    ${BOLD}$total${RESET}"
-    ui_print "  来过      ${C_GREEN}${BOLD}$completed${RESET}"
-    ui_print "  没来      ${C_YELLOW}${BOLD}$skipped${RESET}"
+    ui_print "  $(msg cli.stats.total)    ${BOLD}$total${RESET}"
+    ui_print "  $(msg cli.stats.came)      ${C_GREEN}${BOLD}$completed${RESET}"
+    ui_print "  $(msg cli.stats.skipped)      ${C_YELLOW}${BOLD}$skipped${RESET}"
     if (( total > 0 )); then
       local rate
       rate=$(python3 -c "print(f'{$completed/$total*100:.0f}')" 2>/dev/null || echo "?")
-      ui_print "  来访率    ${BOLD}${rate}%${RESET}"
+      ui_print "  $(msg cli.stats.rate)    ${BOLD}${rate}%${RESET}"
     fi
     ui_blank
   fi
@@ -135,7 +139,7 @@ cmd_config() {
   if [ $# -eq 0 ]; then
     # Show current config
     if ! config_exists; then
-      ui_error "还没有配置。运行 zzz init"
+      ui_error "$(msg cli.config.not_configured)"
       return 1
     fi
 
@@ -145,7 +149,7 @@ cmd_config() {
     winddown=$(config_get "winddown_minutes")
 
     local days_display=""
-    local day_names=("" "周一" "周二" "周三" "周四" "周五" "周六" "周日")
+    local day_names=("" "$(msg day.full.1)" "$(msg day.full.2)" "$(msg day.full.3)" "$(msg day.full.4)" "$(msg day.full.5)" "$(msg day.full.6)" "$(msg day.full.7)")
     local days
     days=$(config_get_array "days")
     while IFS= read -r d; do
@@ -155,14 +159,14 @@ cmd_config() {
     done <<< "$days"
 
     ui_blank
-    ui_header "当前设置"
-    ui_print "  猫猫睡觉        ${BOLD}$bedtime${RESET}"
-    ui_print "  猫猫离开        ${BOLD}$wakeup${RESET}"
-    ui_print "  猫猫来住的日子  ${BOLD}$days_display${RESET}"
-    ui_print "  睡前提醒        ${BOLD}$winddown 分钟${RESET}"
+    ui_header "$(msg cli.config.header)"
+    ui_print "  $(msg cli.config.bedtime)        ${BOLD}$bedtime${RESET}"
+    ui_print "  $(msg cli.config.wakeup)        ${BOLD}$wakeup${RESET}"
+    ui_print "  $(msg cli.config.days)  ${BOLD}$days_display${RESET}"
+    ui_print "  $(msg cli.config.winddown)        ${BOLD}$(msg cli.config.winddown_value "$winddown")${RESET}"
     ui_blank
-    ui_dim "修改: zzz config <key> <value>"
-    ui_dim "可用 key: bedtime, wakeup, winddown"
+    ui_dim "$(msg cli.config.hint)"
+    ui_dim "$(msg cli.config.keys)"
     ui_blank
     return
   fi
@@ -172,35 +176,35 @@ cmd_config() {
   case "$key" in
     bedtime)
       if [[ ! "$value" =~ ^([01]?[0-9]|2[0-3]):[0-5][0-9]$ ]]; then
-        ui_error "格式错误，请用 HH:MM（如 23:00）"
+        ui_error "$(msg cli.error.time_format)"
         return 1
       fi
       config_set "bedtime" "$value"
       source "$LIB_DIR/schedule.sh"
       schedule_update
-      ui_success "猫猫睡觉时间已更新为 $value"
+      ui_success "$(msg cli.success.bedtime "$value")"
       ;;
     wakeup)
       if [[ ! "$value" =~ ^([01]?[0-9]|2[0-3]):[0-5][0-9]$ ]]; then
-        ui_error "格式错误，请用 HH:MM"
+        ui_error "$(msg cli.error.time_format)"
         return 1
       fi
       config_set "wakeup" "$value"
-      ui_success "猫猫离开时间已更新为 $value"
+      ui_success "$(msg cli.success.wakeup "$value")"
       ;;
     winddown)
       if [[ ! "$value" =~ ^[0-9]+$ ]] || (( value < 5 || value > 120 )); then
-        ui_error "请输入 5-120 之间的分钟数"
+        ui_error "$(msg cli.error.winddown_range)"
         return 1
       fi
       config_set "winddown_minutes" "$value"
       source "$LIB_DIR/schedule.sh"
       schedule_update
-      ui_success "会提前 $value 分钟提醒你准备让猫猫睡觉"
+      ui_success "$(msg cli.success.winddown "$value")"
       ;;
     *)
-      ui_error "未知设置: $key"
-      ui_dim "可用: bedtime, wakeup, winddown"
+      ui_error "$(msg cli.error.unknown_key "$key")"
+      ui_dim "$(msg cli.error.unknown_keys)"
       return 1
       ;;
   esac
@@ -212,16 +216,16 @@ cmd_tonight() {
   case "$action" in
     off)
       if ! config_exists; then
-        ui_error "还没有配置。运行 zzz init"
+        ui_error "$(msg cli.config.not_configured)"
         return 1
       fi
 
       ui_blank
-      ui_warn "今晚不让猫猫来睡觉吗？"
-      ui_input "跟猫猫说一声为什么今晚不来？" skip_reason ""
+      ui_warn "$(msg cli.tonight.warn)"
+      ui_input "$(msg cli.tonight.ask_reason)" skip_reason ""
 
       if [ -z "$skip_reason" ]; then
-        ui_error "需要跟猫猫说一声才能跳过"
+        ui_error "$(msg cli.tonight.need_reason)"
         return 1
       fi
 
@@ -229,15 +233,15 @@ cmd_tonight() {
       today=$(date +%Y-%m-%d)
       printf "%s\n%s\n" "$today" "$skip_reason" > "$ZZZ_DIR/skip_tonight"
       stats_record "$today" "skipped:$skip_reason"
-      ui_success "今晚猫猫不会来睡觉了（原因: ${skip_reason}）"
+      ui_success "$(msg cli.tonight.skipped "$skip_reason")"
       ui_blank
       ;;
     "")
-      ui_error "用法: zzz tonight off"
+      ui_error "$(msg cli.error.tonight_usage)"
       ;;
     *)
-      ui_error "未知操作: $action"
-      ui_dim "用法: zzz tonight off"
+      ui_error "$(msg cli.error.unknown_action "$action")"
+      ui_dim "$(msg cli.error.tonight_usage)"
       ;;
   esac
 }
@@ -251,24 +255,31 @@ cmd_log() {
   stats_ensure
 
   ui_blank
-  ui_header "历史记录"
+  ui_header "$(msg cli.log.header)"
 
+  local _log_came _log_skipped _log_empty
+  _log_came=$(msg cli.log.came)
+  _log_skipped=$(msg cli.log.skipped)
+  _log_empty=$(msg cli.log.empty)
   python3 -c "
 import json
 with open('$ZZZ_STATS') as f: d = json.load(f)
 records = d.get('records', [])
+came = '''$_log_came'''
+skipped = '''$_log_skipped'''
+empty = '''$_log_empty'''
 if not records:
-    print('  还没有记录')
+    print(f'  {empty}')
 else:
     for r in records[-20:]:
         date = r['date']
         status = r['status']
         if status == 'completed':
-            print(f'  \033[38;5;114m🐱\033[0m {date}  猫猫来过了')
+            print(f'  \033[38;5;114m🐱\033[0m {date}  {came}')
         else:
             reason = status.replace('skipped:', '') if status.startswith('skipped:') else ''
             extra = f'  \033[2m{reason}\033[0m' if reason else ''
-            print(f'  \033[38;5;222m💤\033[0m {date}  猫猫没来{extra}')
+            print(f'  \033[38;5;222m💤\033[0m {date}  {skipped}{extra}')
 "
   ui_blank
 }
@@ -278,14 +289,14 @@ cmd_test() {
   local seconds="${1:-10}"
 
   if [ $# -gt 1 ]; then
-    ui_error "参数太多"
-    ui_dim "用法: zzz test [seconds]"
+    ui_error "$(msg cli.error.too_many_args)"
+    ui_dim "$(msg cli.error.test_usage)"
     return 1
   fi
 
   if ! [[ "$seconds" =~ ^[0-9]+$ ]] || (( seconds < 1 || seconds > 120 )); then
-    ui_error "测试秒数需要是 1-120 之间的数字"
-    ui_dim "用法: zzz test [seconds]"
+    ui_error "$(msg cli.error.test_seconds)"
+    ui_dim "$(msg cli.error.test_usage)"
     return 1
   fi
 
@@ -293,18 +304,18 @@ cmd_test() {
   [ ! -x "$overlay" ] && overlay="$HOME/.timetosleep/bin/zzz-overlay"
 
   if [ ! -x "$overlay" ]; then
-    ui_error "找不到锁屏程序，请先运行 install.sh"
+    ui_error "$(msg cli.error.overlay_missing)"
     return 1
   fi
 
-  ui_step "测试锁屏覆盖层（${seconds} 秒后自动退出）..."
+  ui_step "$(msg cli.test.running "$seconds")"
   "$overlay" &
   local pid=$!
   sleep "$seconds"
   kill "$pid" 2>/dev/null || true
   wait "$pid" 2>/dev/null || true
 
-  ui_success "测试完成"
+  ui_success "$(msg cli.test.done)"
 }
 
 cmd_uninstall() {
@@ -321,55 +332,55 @@ cmd_uninstall() {
 
     if (( total > 0 )); then
       ui_box "$(printf '%b\n' \
-        "${BOLD}你和猫猫的日子${RESET}" \
+        "${BOLD}$(msg cli.uninstall.stats_title)${RESET}" \
         "" \
-        "  相处晚数  ${BOLD}$total${RESET} 晚" \
-        "  来过次数  ${C_GREEN}${BOLD}$completed${RESET} / $total" \
-        "  连续来住  ${BOLD}$streak${RESET} 晚")"
+        "  $(msg cli.uninstall.nights "$total")" \
+        "  $(msg cli.uninstall.visits "$completed" "$total")" \
+        "  $(msg cli.uninstall.streak "$streak")")"
       ui_blank
     fi
   fi
 
-  if ! ui_type_confirm "确定要卸载吗？请输入：" "送走猫猫"; then
+  if ! ui_type_confirm "$(msg cli.uninstall.confirm_prompt)" "$(msg cli.uninstall.confirm_phrase)"; then
     ui_blank
-    ui_success "卸载已取消"
+    ui_success "$(msg cli.uninstall.cancelled)"
     ui_blank
     return
   fi
 
   ui_blank
-  ui_step "移除定时任务..."
+  ui_step "$(msg cli.uninstall.step.schedule)"
   source "$LIB_DIR/schedule.sh"
   schedule_uninstall
 
-  ui_step "清理配置文件..."
+  ui_step "$(msg cli.uninstall.step.config)"
   rm -rf "$HOME/.timetosleep"
 
-  ui_step "移除命令..."
+  ui_step "$(msg cli.uninstall.step.command)"
   rm -f /usr/local/bin/zzz 2>/dev/null || true
 
   ui_blank
-  ui_success "已完全卸载"
-  ui_print "  ${DIM}猫猫带着行李走了。它会记得你的${RESET}"
+  ui_success "$(msg cli.uninstall.done)"
+  ui_print "  ${DIM}$(msg cli.uninstall.farewell)${RESET}"
   ui_blank
 }
 
 cmd_help() {
   ui_blank
   ui_moon
-  ui_print "  ${BOLD}用法${RESET}"
+  ui_print "  ${BOLD}$(msg cli.help.usage)${RESET}"
   ui_print "  ${C_GRAY}─────────────────────────────${RESET}"
-  ui_print "  ${BOLD}zzz${RESET}              今晚猫猫状态"
-  ui_print "  ${BOLD}zzz init${RESET}         领养 / 重新设置"
-  ui_print "  ${BOLD}zzz status${RESET}       猫猫到访记录"
-  ui_print "  ${BOLD}zzz config${RESET}       查看猫猫日程"
+  ui_print "  ${BOLD}zzz${RESET}              $(msg cli.help.default)"
+  ui_print "  ${BOLD}zzz init${RESET}         $(msg cli.help.init)"
+  ui_print "  ${BOLD}zzz status${RESET}       $(msg cli.help.status)"
+  ui_print "  ${BOLD}zzz config${RESET}       $(msg cli.help.config)"
   ui_print "  ${BOLD}zzz config${RESET} ${C_CYAN}<key> <value>${RESET}"
-  ui_print "                   修改猫猫日程"
-  ui_print "  ${BOLD}zzz tonight off${RESET}  今晚不让猫猫来睡觉"
-  ui_print "  ${BOLD}zzz log${RESET}          猫猫来访历史"
-  ui_print "  ${BOLD}zzz test${RESET} ${C_CYAN}[秒数]${RESET}    测试锁屏（默认 10 秒）"
-  ui_print "  ${BOLD}zzz uninstall${RESET}    卸载"
-  ui_print "  ${BOLD}zzz help${RESET}         显示帮助"
+  ui_print "                   $(msg cli.help.config_edit)"
+  ui_print "  ${BOLD}zzz tonight off${RESET}  $(msg cli.help.tonight)"
+  ui_print "  ${BOLD}zzz log${RESET}          $(msg cli.help.log)"
+  ui_print "  ${BOLD}zzz test${RESET} ${C_CYAN}[seconds]${RESET}    $(msg cli.help.test)"
+  ui_print "  ${BOLD}zzz uninstall${RESET}    $(msg cli.help.uninstall)"
+  ui_print "  ${BOLD}zzz help${RESET}         $(msg cli.help.help)"
   ui_blank
 }
 
@@ -385,7 +396,7 @@ case "${1:-}" in
   uninstall)  cmd_uninstall ;;
   help|--help|-h) cmd_help ;;
   *)
-    ui_error "未知命令: $1"
+    ui_error "$(msg cli.error.unknown_command "$1")"
     cmd_help
     exit 1
     ;;

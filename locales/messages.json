@@ -1,0 +1,1405 @@
+{
+  "version": 1,
+  "supported": [
+    "zh-Hans",
+    "zh-Hant",
+    "en",
+    "ja",
+    "ko"
+  ],
+  "strings": {
+    "welcome.title": {
+      "zh-Hans": "你打算领养这只小猫吗？",
+      "zh-Hant": "你打算領養這隻小貓嗎？",
+      "en": "Ready to adopt this little cat?",
+      "ja": "この子猫を迎え入れますか？",
+      "ko": "이 고양이를 입양할까요?"
+    },
+    "welcome.body": {
+      "zh-Hans": "每天到了约定时间，它都会住进你的电脑\n为了保证它的睡眠，你就不能使用电脑了哦",
+      "zh-Hant": "每天到了約定時間，牠都會住進你的電腦\n為了保證牠的睡眠，你就不能使用電腦了哦",
+      "en": "Every day at the agreed time, it moves into your Mac.\nWhile it sleeps, you can't use the computer.",
+      "ja": "約束の時間になると、この Mac に入ってきます。\nねこが眠っている間は、パソコンを使えません。",
+      "ko": "약속한 시간이 되면 Mac 안으로 들어옵니다.\n고양이가 자는 동안에는 컴퓨터를 쓸 수 없어요."
+    },
+    "welcome.cta": {
+      "zh-Hans": "好想养",
+      "zh-Hant": "好想養",
+      "en": "I'd love to",
+      "ja": "迎えたい",
+      "ko": "키우고 싶어요"
+    },
+    "config.bedtime.title": {
+      "zh-Hans": "猫猫休眠时间",
+      "zh-Hant": "貓貓休眠時間",
+      "en": "Cat bedtime",
+      "ja": "ねこの就寝時間",
+      "ko": "고양이 취침 시간"
+    },
+    "config.bedtime.hint": {
+      "zh-Hans": "千万不要太晚哦，猫猫也需要一个好睡眠",
+      "zh-Hant": "千萬不要太晚哦，貓貓也需要一個好睡眠",
+      "en": "Not too late — cats need good sleep too",
+      "ja": "遅すぎないで。ねこにも質のいい睡眠が必要です",
+      "ko": "너무 늦지 마세요. 고양이도 푹 자야 해요"
+    },
+    "config.wakeup.title": {
+      "zh-Hans": "猫猫起床时间",
+      "zh-Hant": "貓貓起床時間",
+      "en": "Cat wake-up time",
+      "ja": "ねこの起床時間",
+      "ko": "고양이 기상 시간"
+    },
+    "config.wakeup.hint": {
+      "zh-Hans": "到这个时间后，猫猫就会离开，你可以使用电脑",
+      "zh-Hant": "到這個時間後，貓貓就會離開，你可以使用電腦",
+      "en": "After this time the cat leaves and you can use your Mac",
+      "ja": "この時間になるとねこは去り、Mac を使えます",
+      "ko": "이 시간이 되면 고양이가 떠나고 Mac을 쓸 수 있어요"
+    },
+    "config.days.title": {
+      "zh-Hans": "猫猫周几可以来",
+      "zh-Hant": "貓貓週幾可以來",
+      "en": "Which days can the cat visit?",
+      "ja": "ねこが来られる曜日",
+      "ko": "고양이가 올 요일"
+    },
+    "config.confirm": {
+      "zh-Hans": "确认",
+      "zh-Hant": "確認",
+      "en": "Continue",
+      "ja": "確認",
+      "ko": "확인"
+    },
+    "agreement.title": {
+      "zh-Hans": "领养协议签署",
+      "zh-Hant": "領養協議簽署",
+      "en": "Adoption agreement",
+      "ja": "迎え入れ同意",
+      "ko": "입양 동의"
+    },
+    "agreement.subtitle": {
+      "zh-Hans": "请仔细阅读并签字确认",
+      "zh-Hant": "請仔細閱讀並簽字確認",
+      "en": "Please read carefully and sign",
+      "ja": "よく読んで署名してください",
+      "ko": "잘 읽고 서명해 주세요"
+    },
+    "agreement.sleep": {
+      "zh-Hans": "猫猫睡觉",
+      "zh-Hant": "貓貓睡覺",
+      "en": "Bedtime",
+      "ja": "就寝",
+      "ko": "취침"
+    },
+    "agreement.leave": {
+      "zh-Hans": "猫猫离开",
+      "zh-Hant": "貓貓離開",
+      "en": "Wake-up",
+      "ja": "起床",
+      "ko": "기상"
+    },
+    "agreement.days": {
+      "zh-Hans": "来睡日子",
+      "zh-Hant": "來睡日子",
+      "en": "Visit days",
+      "ja": "来る曜日",
+      "ko": "방문 요일"
+    },
+    "agreement.reminder": {
+      "zh-Hans": "睡前提醒",
+      "zh-Hant": "睡前提醒",
+      "en": "Wind-down reminder",
+      "ja": "就寝前リマインダー",
+      "ko": "취침 전 알림"
+    },
+    "agreement.reminder_value": {
+      "zh-Hans": "%d 分钟",
+      "zh-Hant": "%d 分鐘",
+      "en": "%d min",
+      "ja": "%d 分",
+      "ko": "%d분"
+    },
+    "agreement.pledge_prompt": {
+      "zh-Hans": "请键入「%@」完成领养协议",
+      "zh-Hant": "請鍵入「%@」完成領養協議",
+      "en": "Type “%@” to complete the agreement",
+      "ja": "「%@」と入力して同意を完了",
+      "ko": "「%@」을(를) 입력해 동의를 완료하세요"
+    },
+    "agreement.pledge_placeholder": {
+      "zh-Hans": "在此键入上面的句子",
+      "zh-Hant": "在此鍵入上面的句子",
+      "en": "Type the sentence above",
+      "ja": "上の文をここに入力",
+      "ko": "위 문장을 입력하세요"
+    },
+    "agreement.confirm": {
+      "zh-Hans": "确认领养",
+      "zh-Hant": "確認領養",
+      "en": "Confirm adoption",
+      "ja": "迎え入れを確定",
+      "ko": "입양 확정"
+    },
+    "agreement.confirmed": {
+      "zh-Hans": "已确认！",
+      "zh-Hant": "已確認！",
+      "en": "Confirmed!",
+      "ja": "確認しました！",
+      "ko": "확인했어요!"
+    },
+    "agreement.wrong_final": {
+      "zh-Hans": "未正确输入，想好了再来哦～",
+      "zh-Hant": "未正確輸入，想好了再來哦～",
+      "en": "Incorrect text. Come back when you're ready.",
+      "ja": "入力が違います。準備ができたらまたどうぞ",
+      "ko": "입력이 맞지 않아요. 준비되면 다시 와 주세요"
+    },
+    "agreement.wrong_attempts": {
+      "zh-Hans": "输入不正确，还有 %d 次机会",
+      "zh-Hant": "輸入不正確，還有 %d 次機會",
+      "en": "Incorrect. %d attempts left",
+      "ja": "入力が違います。あと %d 回",
+      "ko": "입력이 틀렸어요. %d번 남았습니다"
+    },
+    "pledge.required_phrase": {
+      "zh-Hans": "我愿意遵守承诺让猫猫好好休息",
+      "zh-Hant": "我願意遵守承諾讓貓貓好好休息",
+      "en": "I promise to let the cat rest well",
+      "ja": "約束を守って、ねこをしっかり休ませます",
+      "ko": "약속을 지켜 고양이가 푹 쉴 수 있게 하겠습니다"
+    },
+    "lock_preview.playing": {
+      "zh-Hans": "正在播放锁屏效果预览",
+      "zh-Hant": "正在播放鎖屏效果預覽",
+      "en": "Playing lock screen preview",
+      "ja": "ロック画面プレビューを再生中",
+      "ko": "잠금 화면 미리보기 재생 중"
+    },
+    "dashboard.delay": {
+      "zh-Hans": "推迟",
+      "zh-Hant": "推遲",
+      "en": "Delay",
+      "ja": "延期",
+      "ko": "연기"
+    },
+    "dashboard.sleep_config": {
+      "zh-Hans": "睡眠时间配置",
+      "zh-Hant": "睡眠時間配置",
+      "en": "Sleep schedule",
+      "ja": "睡眠スケジュール",
+      "ko": "수면 일정"
+    },
+    "dashboard.sleep": {
+      "zh-Hans": "睡觉",
+      "zh-Hant": "睡覺",
+      "en": "Bedtime",
+      "ja": "就寝",
+      "ko": "취침"
+    },
+    "dashboard.wakeup": {
+      "zh-Hans": "起床",
+      "zh-Hant": "起床",
+      "en": "Wake-up",
+      "ja": "起床",
+      "ko": "기상"
+    },
+    "dashboard.weekly": {
+      "zh-Hans": "每周哪天来",
+      "zh-Hant": "每週哪天來",
+      "en": "Weekly visit days",
+      "ja": "毎週の訪問日",
+      "ko": "매주 방문 요일"
+    },
+    "dashboard.saved": {
+      "zh-Hans": "已保存！",
+      "zh-Hant": "已儲存！",
+      "en": "Saved!",
+      "ja": "保存しました！",
+      "ko": "저장했어요!"
+    },
+    "dashboard.save": {
+      "zh-Hans": "确认修改",
+      "zh-Hant": "確認修改",
+      "en": "Save changes",
+      "ja": "変更を保存",
+      "ko": "변경 저장"
+    },
+    "days.every_day": {
+      "zh-Hans": "每天",
+      "zh-Hant": "每天",
+      "en": "Every day",
+      "ja": "毎日",
+      "ko": "매일"
+    },
+    "days.weekdays": {
+      "zh-Hans": "周一到周五",
+      "zh-Hant": "週一到週五",
+      "en": "Mon–Fri",
+      "ja": "月〜金",
+      "ko": "월–금"
+    },
+    "days.none": {
+      "zh-Hans": "无",
+      "zh-Hant": "無",
+      "en": "None",
+      "ja": "なし",
+      "ko": "없음"
+    },
+    "days.list_sep": {
+      "zh-Hans": "、",
+      "zh-Hant": "、",
+      "en": ", ",
+      "ja": "、",
+      "ko": ", "
+    },
+    "day.short.1": {
+      "zh-Hans": "一",
+      "zh-Hant": "一",
+      "en": "Mon",
+      "ja": "月",
+      "ko": "월"
+    },
+    "day.full.1": {
+      "zh-Hans": "周一",
+      "zh-Hant": "週一",
+      "en": "Monday",
+      "ja": "月曜",
+      "ko": "월요일"
+    },
+    "day.short.2": {
+      "zh-Hans": "二",
+      "zh-Hant": "二",
+      "en": "Tue",
+      "ja": "火",
+      "ko": "화"
+    },
+    "day.full.2": {
+      "zh-Hans": "周二",
+      "zh-Hant": "週二",
+      "en": "Tuesday",
+      "ja": "火曜",
+      "ko": "화요일"
+    },
+    "day.short.3": {
+      "zh-Hans": "三",
+      "zh-Hant": "三",
+      "en": "Wed",
+      "ja": "水",
+      "ko": "수"
+    },
+    "day.full.3": {
+      "zh-Hans": "周三",
+      "zh-Hant": "週三",
+      "en": "Wednesday",
+      "ja": "水曜",
+      "ko": "수요일"
+    },
+    "day.short.4": {
+      "zh-Hans": "四",
+      "zh-Hant": "四",
+      "en": "Thu",
+      "ja": "木",
+      "ko": "목"
+    },
+    "day.full.4": {
+      "zh-Hans": "周四",
+      "zh-Hant": "週四",
+      "en": "Thursday",
+      "ja": "木曜",
+      "ko": "목요일"
+    },
+    "day.short.5": {
+      "zh-Hans": "五",
+      "zh-Hant": "五",
+      "en": "Fri",
+      "ja": "金",
+      "ko": "금"
+    },
+    "day.full.5": {
+      "zh-Hans": "周五",
+      "zh-Hant": "週五",
+      "en": "Friday",
+      "ja": "金曜",
+      "ko": "금요일"
+    },
+    "day.short.6": {
+      "zh-Hans": "六",
+      "zh-Hant": "六",
+      "en": "Sat",
+      "ja": "土",
+      "ko": "토"
+    },
+    "day.full.6": {
+      "zh-Hans": "周六",
+      "zh-Hant": "週六",
+      "en": "Saturday",
+      "ja": "土曜",
+      "ko": "토요일"
+    },
+    "day.short.7": {
+      "zh-Hans": "日",
+      "zh-Hant": "日",
+      "en": "Sun",
+      "ja": "日",
+      "ko": "일"
+    },
+    "day.full.7": {
+      "zh-Hans": "周日",
+      "zh-Hant": "週日",
+      "en": "Sunday",
+      "ja": "日曜",
+      "ko": "일요일"
+    },
+    "delay.title": {
+      "zh-Hans": "⏰ 往后推迟时间",
+      "zh-Hant": "⏰ 往後推遲時間",
+      "en": "⏰ Delay bedtime",
+      "ja": "⏰ 就寝を延期",
+      "ko": "⏰ 취침 연기"
+    },
+    "delay.hint": {
+      "zh-Hans": "有特殊情况，请提前告知猫猫",
+      "zh-Hant": "有特殊情況，請提前告知貓貓",
+      "en": "If something comes up, let the cat know in advance",
+      "ja": "事情があるときは、ねこに先に伝えてください",
+      "ko": "특별한 일이 있으면 고양이에게 미리 알려 주세요"
+    },
+    "delay.reason_label": {
+      "zh-Hans": "原因（可选）",
+      "zh-Hant": "原因（可選）",
+      "en": "Reason (optional)",
+      "ja": "理由（任意）",
+      "ko": "사유 (선택)"
+    },
+    "delay.reason_placeholder": {
+      "zh-Hans": "今晚有特殊情况是因为",
+      "zh-Hant": "今晚有特殊情況是因為",
+      "en": "Why tonight is special…",
+      "ja": "今夜は特別な理由が…",
+      "ko": "오늘 밤 특별한 이유…"
+    },
+    "delay.duration_label": {
+      "zh-Hans": "推迟多久",
+      "zh-Hant": "推遲多久",
+      "en": "Delay by",
+      "ja": "どれくらい延期",
+      "ko": "얼마나 연기할까요"
+    },
+    "delay.15min": {
+      "zh-Hans": "15 分钟",
+      "zh-Hant": "15 分鐘",
+      "en": "15 min",
+      "ja": "15 分",
+      "ko": "15분"
+    },
+    "delay.30min": {
+      "zh-Hans": "30 分钟",
+      "zh-Hant": "30 分鐘",
+      "en": "30 min",
+      "ja": "30 分",
+      "ko": "30분"
+    },
+    "delay.custom": {
+      "zh-Hans": "自定义",
+      "zh-Hant": "自訂",
+      "en": "Custom",
+      "ja": "カスタム",
+      "ko": "직접 입력"
+    },
+    "delay.postpone": {
+      "zh-Hans": "推迟",
+      "zh-Hant": "推遲",
+      "en": "Delay",
+      "ja": "延期",
+      "ko": "연기"
+    },
+    "delay.minutes": {
+      "zh-Hans": "分钟",
+      "zh-Hant": "分鐘",
+      "en": "min",
+      "ja": "分",
+      "ko": "분"
+    },
+    "delay.cancel": {
+      "zh-Hans": "取消",
+      "zh-Hant": "取消",
+      "en": "Cancel",
+      "ja": "キャンセル",
+      "ko": "취소"
+    },
+    "delay.submit": {
+      "zh-Hans": "告知猫猫",
+      "zh-Hant": "告知貓貓",
+      "en": "Tell the cat",
+      "ja": "ねこに伝える",
+      "ko": "고양이에게 알리기"
+    },
+    "delay.default_reason": {
+      "zh-Hans": "推迟%d分钟",
+      "zh-Hant": "推遲%d分鐘",
+      "en": "Delayed %d minutes",
+      "ja": "%d 分延期",
+      "ko": "%d분 연기"
+    },
+    "quit.title": {
+      "zh-Hans": "确定要退出 Cat Bedtime 吗？",
+      "zh-Hant": "確定要退出 Cat Bedtime 嗎？",
+      "en": "Quit Cat Bedtime?",
+      "ja": "Cat Bedtime を終了しますか？",
+      "ko": "Cat Bedtime를 종료할까요?"
+    },
+    "quit.message": {
+      "zh-Hans": "退出只会关闭设置窗口\n睡眠时间和后台定时任务会继续保留，到点仍会锁屏",
+      "zh-Hant": "退出只會關閉設定視窗\n睡眠時間和背景定時任務會繼續保留，到點仍會鎖屏",
+      "en": "Only the settings window closes.\nYour schedule and background tasks keep running — lock screen still activates on time.",
+      "ja": "設定ウィンドウだけが閉じます。\nスケジュールとバックグラウンド処理は続き、時間になるとロックされます。",
+      "ko": "설정 창만 닫힙니다.\n일정과 백그라운드 작업은 계속되며, 시간이 되면 잠금 화면이 켜집니다."
+    },
+    "quit.confirm": {
+      "zh-Hans": "退出",
+      "zh-Hant": "退出",
+      "en": "Quit",
+      "ja": "終了",
+      "ko": "종료"
+    },
+    "quit.cancel": {
+      "zh-Hans": "取消",
+      "zh-Hant": "取消",
+      "en": "Cancel",
+      "ja": "キャンセル",
+      "ko": "취소"
+    },
+    "menu.quit": {
+      "zh-Hans": "退出 Cat Bedtime",
+      "zh-Hant": "退出 Cat Bedtime",
+      "en": "Quit Cat Bedtime",
+      "ja": "Cat Bedtime を終了",
+      "ko": "Cat Bedtime 종료"
+    },
+    "lock.quote": {
+      "zh-Hans": "嘘，猫猫睡了，安静",
+      "zh-Hant": "噓，貓貓睡了，安靜",
+      "en": "Shh — the cat is asleep. Quiet, please.",
+      "ja": "しっ、ねこが寝てる。静かに",
+      "ko": "쉿, 고양이가 자고 있어요. 조용히"
+    },
+    "lock.countdown_hours": {
+      "zh-Hans": "还有 %d 小时 %d 分钟醒来",
+      "zh-Hant": "還有 %d 小時 %d 分鐘醒來",
+      "en": "Wakes in %d h %d min",
+      "ja": "あと %d 時間 %d 分で起きる",
+      "ko": "%d시간 %d분 후에 일어나요"
+    },
+    "lock.countdown_minutes": {
+      "zh-Hans": "还有 %d 分钟醒来",
+      "zh-Hant": "還有 %d 分鐘醒來",
+      "en": "Wakes in %d min",
+      "ja": "あと %d 分で起きる",
+      "ko": "%d분 후에 일어나요"
+    },
+    "lock.wakeup_line": {
+      "zh-Hans": "猫猫 %@ 起床 · %@",
+      "zh-Hant": "貓貓 %@ 起床 · %@",
+      "en": "Cat wakes at %@ · %@",
+      "ja": "ねこ %@ 起床 · %@",
+      "ko": "고양이 %@ 기상 · %@"
+    },
+    "lock.missing_asset": {
+      "zh-Hans": "缺少猫猫动画素材\n~/.timetosleep/assets/cat-bedtime.mov",
+      "zh-Hant": "缺少貓貓動畫素材\n~/.timetosleep/assets/cat-bedtime.mov",
+      "en": "Missing cat animation\n~/.timetosleep/assets/cat-bedtime.mov",
+      "ja": "ねこのアニメ素材がありません\n~/.timetosleep/assets/cat-bedtime.mov",
+      "ko": "고양이 애니메이션 없음\n~/.timetosleep/assets/cat-bedtime.mov"
+    },
+    "lock.esc_hint": {
+      "zh-Hans": "异常时连按两下 ESC：重新校验时间，非锁机时段可退出",
+      "zh-Hant": "異常時連按兩下 ESC：重新校驗時間，非鎖機時段可退出",
+      "en": "If something's wrong, double-press ESC to re-check time; exit when lock isn't active",
+      "ja": "異常時は ESC を2回：時刻を再確認。ロック時間外なら終了できます",
+      "ko": "문제가 있으면 ESC 두 번: 시간 재확인. 잠금 시간이 아니면 종료 가능"
+    },
+    "notify.winddown.title": {
+      "zh-Hans": "🐾  猫猫开始打哈欠了",
+      "zh-Hant": "🐾  貓貓開始打哈欠了",
+      "en": "🐾  The cat is getting sleepy",
+      "ja": "🐾  ねこがあくびを始めました",
+      "ko": "🐾  고양이가 하품하기 시작했어요"
+    },
+    "notify.winddown.subtitle": {
+      "zh-Hans": "还有 %d 分钟到关灯",
+      "zh-Hant": "還有 %d 分鐘到關燈",
+      "en": "%d minutes until lights out",
+      "ja": "消灯まであと %d 分",
+      "ko": "불 끄기까지 %d분"
+    },
+    "notify.winddown.body": {
+      "zh-Hans": "收尾这一小段就好",
+      "zh-Hant": "收尾這一小段就好",
+      "en": "Just wrap up this bit",
+      "ja": "このあたりを片づけましょう",
+      "ko": "이 정도만 마무리해요"
+    },
+    "notify.winddown.button": {
+      "zh-Hans": "知道啦",
+      "zh-Hant": "知道啦",
+      "en": "Got it",
+      "ja": "わかった",
+      "ko": "알겠어요"
+    },
+    "notify.locksoon.title": {
+      "zh-Hans": "💤  它要去拉灯绳了",
+      "zh-Hant": "💤  牠要去拉燈繩了",
+      "en": "💤  It's pulling the lamp cord",
+      "ja": "💤  消灯のひもを引きに行きます",
+      "ko": "💤  불 끄러 가요"
+    },
+    "notify.locksoon.subtitle": {
+      "zh-Hans": "一分钟后锁屏",
+      "zh-Hant": "一分鐘後鎖屏",
+      "en": "Lock screen in one minute",
+      "ja": "1 分後にロック",
+      "ko": "1분 후 잠금"
+    },
+    "notify.locksoon.body": {
+      "zh-Hans": "手头的按个保存就好，今天到这",
+      "zh-Hant": "手頭的按個保存就好，今天到這",
+      "en": "Save what you're doing — that's enough for today",
+      "ja": "手元の作業を保存して、今日はここまで",
+      "ko": "하고 있던 건 저장하고, 오늘은 여기까지"
+    },
+    "notify.locksoon.button": {
+      "zh-Hans": "好",
+      "zh-Hant": "好",
+      "en": "OK",
+      "ja": "OK",
+      "ko": "좋아요"
+    },
+    "cli.not_configured": {
+      "zh-Hans": "还没有领养猫猫。运行 zzz init 开始",
+      "zh-Hant": "還沒有領養貓貓。執行 zzz init 開始",
+      "en": "No cat adopted yet. Run zzz init to start",
+      "ja": "まだねこを迎えていません。zzz init を実行",
+      "ko": "아직 고양이를 입양하지 않았어요. zzz init 실행"
+    },
+    "cli.yes": {
+      "zh-Hans": "是",
+      "zh-Hant": "是",
+      "en": "Yes",
+      "ja": "はい",
+      "ko": "예"
+    },
+    "cli.no": {
+      "zh-Hans": "否",
+      "zh-Hant": "否",
+      "en": "No",
+      "ja": "いいえ",
+      "ko": "아니오"
+    },
+    "cli.eta_hours": {
+      "zh-Hans": "%d 小时 %d 分钟",
+      "zh-Hant": "%d 小時 %d 分鐘",
+      "en": "%d h %d min",
+      "ja": "%d 時間 %d 分",
+      "ko": "%d시간 %d분"
+    },
+    "cli.eta_minutes": {
+      "zh-Hans": "%d 分钟",
+      "zh-Hant": "%d 分鐘",
+      "en": "%d min",
+      "ja": "%d 分",
+      "ko": "%d분"
+    },
+    "cli.skipped.title": {
+      "zh-Hans": "猫猫今晚不来睡觉了",
+      "zh-Hant": "貓貓今晚不來睡覺了",
+      "en": "The cat isn't sleeping here tonight",
+      "ja": "今夜はねこが来ません",
+      "ko": "오늘 밤 고양이는 안 와요"
+    },
+    "cli.skipped.note": {
+      "zh-Hans": "它已经收到你的留言了",
+      "zh-Hant": "牠已經收到你的留言了",
+      "en": "It got your message",
+      "ja": "あなたの伝言は届きました",
+      "ko": "당신의 메시지를 받았어요"
+    },
+    "cli.skipped.tomorrow": {
+      "zh-Hans": "明天 %s 再看日程",
+      "zh-Hant": "明天 %s 再看日程",
+      "en": "Check again tomorrow at %s",
+      "ja": "明日 %s にまた確認",
+      "ko": "내일 %s에 다시 확인"
+    },
+    "cli.tonight.title": {
+      "zh-Hans": "猫猫今晚 %s 睡觉",
+      "zh-Hant": "貓貓今晚 %s 睡覺",
+      "en": "Cat sleeps at %s tonight",
+      "ja": "今夜のねこの就寝は %s",
+      "ko": "오늘 밤 고양이 취침 %s"
+    },
+    "cli.tonight.until": {
+      "zh-Hans": "离猫猫睡觉还有 %s",
+      "zh-Hant": "離貓貓睡覺還有 %s",
+      "en": "%s until cat bedtime",
+      "ja": "就寝まであと %s",
+      "ko": "취침까지 %s"
+    },
+    "cli.tonight.remind": {
+      "zh-Hans": "提前 %s 分钟提醒你准备",
+      "zh-Hant": "提前 %s 分鐘提醒你準備",
+      "en": "Reminder %s min before",
+      "ja": "%s 分前にリマインド",
+      "ko": "%s분 전에 알림"
+    },
+    "cli.tonight.wakeup": {
+      "zh-Hans": "猫猫早上 %s 走",
+      "zh-Hant": "貓貓早上 %s 走",
+      "en": "Cat leaves at %s",
+      "ja": "ねこは朝 %s に去ります",
+      "ko": "고양이는 아침 %s에 떠나요"
+    },
+    "cli.off_day": {
+      "zh-Hans": "猫猫今天不用来睡觉，放松吧",
+      "zh-Hant": "貓貓今天不用來睡覺，放鬆吧",
+      "en": "No cat visit today — relax",
+      "ja": "今日はねこは来ません。のんびりどうぞ",
+      "ko": "오늘은 고양이가 안 와요. 편히 쉬세요"
+    },
+    "cli.off_day.hint": {
+      "zh-Hans": "来住日子请查看 zzz config",
+      "zh-Hant": "來住日子請查看 zzz config",
+      "en": "See visit days: zzz config",
+      "ja": "訪問日: zzz config",
+      "ko": "방문 요일: zzz config"
+    },
+    "cli.already_asleep": {
+      "zh-Hans": "猫猫今晚已经睡下了",
+      "zh-Hant": "貓貓今晚已經睡下了",
+      "en": "The cat is already asleep tonight",
+      "ja": "今夜のねこはもう寝ています",
+      "ko": "오늘 밤 고양이는 이미 잤어요"
+    },
+    "cli.tomorrow": {
+      "zh-Hans": "明天 %s 再来",
+      "zh-Hant": "明天 %s 再來",
+      "en": "Back tomorrow at %s",
+      "ja": "明日 %s にまた",
+      "ko": "내일 %s에 다시"
+    },
+    "cli.stats.title": {
+      "zh-Hans": "猫猫记录",
+      "zh-Hant": "貓貓記錄",
+      "en": "Cat log",
+      "ja": "ねこの記録",
+      "ko": "고양이 기록"
+    },
+    "cli.stats.total": {
+      "zh-Hans": "总晚数",
+      "zh-Hant": "總晚數",
+      "en": "Total nights",
+      "ja": "合計夜数",
+      "ko": "총 밤"
+    },
+    "cli.stats.came": {
+      "zh-Hans": "来过",
+      "zh-Hant": "來過",
+      "en": "Visited",
+      "ja": "来た",
+      "ko": "방문"
+    },
+    "cli.stats.skipped": {
+      "zh-Hans": "没来",
+      "zh-Hant": "沒來",
+      "en": "Skipped",
+      "ja": "来なかった",
+      "ko": "미방문"
+    },
+    "cli.stats.rate": {
+      "zh-Hans": "来访率",
+      "zh-Hant": "來訪率",
+      "en": "Visit rate",
+      "ja": "来訪率",
+      "ko": "방문률"
+    },
+    "cli.config.not_configured": {
+      "zh-Hans": "还没有配置。运行 zzz init",
+      "zh-Hant": "還沒有設定。執行 zzz init",
+      "en": "Not configured. Run zzz init",
+      "ja": "未設定です。zzz init を実行",
+      "ko": "설정 없음. zzz init 실행"
+    },
+    "cli.config.header": {
+      "zh-Hans": "当前设置",
+      "zh-Hant": "目前設定",
+      "en": "Current settings",
+      "ja": "現在の設定",
+      "ko": "현재 설정"
+    },
+    "cli.config.bedtime": {
+      "zh-Hans": "猫猫睡觉",
+      "zh-Hant": "貓貓睡覺",
+      "en": "Bedtime",
+      "ja": "就寝",
+      "ko": "취침"
+    },
+    "cli.config.wakeup": {
+      "zh-Hans": "猫猫离开",
+      "zh-Hant": "貓貓離開",
+      "en": "Wake-up",
+      "ja": "起床",
+      "ko": "기상"
+    },
+    "cli.config.days": {
+      "zh-Hans": "猫猫来住的日子",
+      "zh-Hant": "貓貓來住的日子",
+      "en": "Visit days",
+      "ja": "来る曜日",
+      "ko": "방문 요일"
+    },
+    "cli.config.winddown": {
+      "zh-Hans": "睡前提醒",
+      "zh-Hant": "睡前提醒",
+      "en": "Wind-down",
+      "ja": "就寝前",
+      "ko": "취침 전 알림"
+    },
+    "cli.config.winddown_value": {
+      "zh-Hans": "%s 分钟",
+      "zh-Hant": "%s 分鐘",
+      "en": "%s min",
+      "ja": "%s 分",
+      "ko": "%s분"
+    },
+    "cli.config.hint": {
+      "zh-Hans": "修改: zzz config <key> <value>",
+      "zh-Hant": "修改: zzz config <key> <value>",
+      "en": "Change: zzz config <key> <value>",
+      "ja": "変更: zzz config <key> <value>",
+      "ko": "변경: zzz config <key> <value>"
+    },
+    "cli.config.keys": {
+      "zh-Hans": "可用 key: bedtime, wakeup, winddown",
+      "zh-Hant": "可用 key: bedtime, wakeup, winddown",
+      "en": "Keys: bedtime, wakeup, winddown",
+      "ja": "キー: bedtime, wakeup, winddown",
+      "ko": "키: bedtime, wakeup, winddown"
+    },
+    "cli.error.time_format": {
+      "zh-Hans": "格式错误，请用 HH:MM（如 23:00）",
+      "zh-Hant": "格式錯誤，請用 HH:MM（如 23:00）",
+      "en": "Invalid format. Use HH:MM (e.g. 23:00)",
+      "ja": "形式が違います。HH:MM（例 23:00）",
+      "ko": "형식 오류. HH:MM (예: 23:00)"
+    },
+    "cli.success.bedtime": {
+      "zh-Hans": "猫猫睡觉时间已更新为 %s",
+      "zh-Hant": "貓貓睡覺時間已更新為 %s",
+      "en": "Bedtime updated to %s",
+      "ja": "就寝を %s に更新",
+      "ko": "취침 시간 %s로 변경"
+    },
+    "cli.success.wakeup": {
+      "zh-Hans": "猫猫离开时间已更新为 %s",
+      "zh-Hant": "貓貓離開時間已更新為 %s",
+      "en": "Wake-up updated to %s",
+      "ja": "起床を %s に更新",
+      "ko": "기상 시간 %s로 변경"
+    },
+    "cli.error.winddown_range": {
+      "zh-Hans": "请输入 5-120 之间的分钟数",
+      "zh-Hant": "請輸入 5-120 之間的分鐘數",
+      "en": "Enter minutes between 5 and 120",
+      "ja": "5〜120 の分を入力",
+      "ko": "5–120 사이 분을 입력"
+    },
+    "cli.success.winddown": {
+      "zh-Hans": "会提前 %s 分钟提醒你准备让猫猫睡觉",
+      "zh-Hant": "會提前 %s 分鐘提醒你準備讓貓貓睡覺",
+      "en": "You'll be reminded %s min before cat bedtime",
+      "ja": "就寝 %s 分前にリマインドします",
+      "ko": "취침 %s분 전에 알림"
+    },
+    "cli.error.unknown_key": {
+      "zh-Hans": "未知设置: %s",
+      "zh-Hant": "未知設定: %s",
+      "en": "Unknown setting: %s",
+      "ja": "不明な設定: %s",
+      "ko": "알 수 없는 설정: %s"
+    },
+    "cli.error.unknown_keys": {
+      "zh-Hans": "可用: bedtime, wakeup, winddown",
+      "zh-Hant": "可用: bedtime, wakeup, winddown",
+      "en": "Available: bedtime, wakeup, winddown",
+      "ja": "利用可能: bedtime, wakeup, winddown",
+      "ko": "사용 가능: bedtime, wakeup, winddown"
+    },
+    "cli.tonight.warn": {
+      "zh-Hans": "今晚不让猫猫来睡觉吗？",
+      "zh-Hant": "今晚不讓貓貓來睡覺嗎？",
+      "en": "Skip the cat's visit tonight?",
+      "ja": "今夜はねこを来させませんか？",
+      "ko": "오늘 밤 고양이를 안 부를까요?"
+    },
+    "cli.tonight.ask_reason": {
+      "zh-Hans": "跟猫猫说一声为什么今晚不来？",
+      "zh-Hant": "跟貓貓說一聲為什麼今晚不來？",
+      "en": "Tell the cat why tonight is off",
+      "ja": "今夜来ない理由をねこに伝えて",
+      "ko": "오늘 안 오는 이유를 고양이에게"
+    },
+    "cli.tonight.need_reason": {
+      "zh-Hans": "需要跟猫猫说一声才能跳过",
+      "zh-Hant": "需要跟貓貓說一聲才能跳過",
+      "en": "You need to tell the cat why to skip",
+      "ja": "スキップするには理由が必要です",
+      "ko": "건너뛰려면 이유를 말해야 해요"
+    },
+    "cli.tonight.skipped": {
+      "zh-Hans": "今晚猫猫不会来睡觉了（原因: %s）",
+      "zh-Hant": "今晚貓貓不會來睡覺了（原因: %s）",
+      "en": "Cat won't visit tonight (reason: %s)",
+      "ja": "今夜は来ません（理由: %s）",
+      "ko": "오늘 밤 안 옵니다 (사유: %s)"
+    },
+    "cli.error.tonight_usage": {
+      "zh-Hans": "用法: zzz tonight off",
+      "zh-Hant": "用法: zzz tonight off",
+      "en": "Usage: zzz tonight off",
+      "ja": "使い方: zzz tonight off",
+      "ko": "사용법: zzz tonight off"
+    },
+    "cli.error.unknown_action": {
+      "zh-Hans": "未知操作: %s",
+      "zh-Hant": "未知操作: %s",
+      "en": "Unknown action: %s",
+      "ja": "不明な操作: %s",
+      "ko": "알 수 없는 작업: %s"
+    },
+    "cli.log.header": {
+      "zh-Hans": "历史记录",
+      "zh-Hant": "歷史記錄",
+      "en": "History",
+      "ja": "履歴",
+      "ko": "기록"
+    },
+    "cli.log.empty": {
+      "zh-Hans": "还没有记录",
+      "zh-Hant": "還沒有記錄",
+      "en": "No records yet",
+      "ja": "まだ記録がありません",
+      "ko": "기록 없음"
+    },
+    "cli.log.came": {
+      "zh-Hans": "猫猫来过了",
+      "zh-Hant": "貓貓來過了",
+      "en": "Cat visited",
+      "ja": "ねこが来ました",
+      "ko": "고양이가 왔어요"
+    },
+    "cli.log.skipped": {
+      "zh-Hans": "猫猫没来",
+      "zh-Hant": "貓貓沒來",
+      "en": "Cat skipped",
+      "ja": "ねこは来ませんでした",
+      "ko": "고양이 안 옴"
+    },
+    "cli.error.too_many_args": {
+      "zh-Hans": "参数太多",
+      "zh-Hant": "參數太多",
+      "en": "Too many arguments",
+      "ja": "引数が多すぎます",
+      "ko": "인수가 너무 많음"
+    },
+    "cli.error.test_usage": {
+      "zh-Hans": "用法: zzz test [seconds]",
+      "zh-Hant": "用法: zzz test [seconds]",
+      "en": "Usage: zzz test [seconds]",
+      "ja": "使い方: zzz test [seconds]",
+      "ko": "사용법: zzz test [seconds]"
+    },
+    "cli.error.test_seconds": {
+      "zh-Hans": "测试秒数需要是 1-120 之间的数字",
+      "zh-Hant": "測試秒數需要是 1-120 之間的數字",
+      "en": "Seconds must be 1–120",
+      "ja": "秒数は 1〜120",
+      "ko": "초는 1–120"
+    },
+    "cli.error.overlay_missing": {
+      "zh-Hans": "找不到锁屏程序，请先运行 install.sh",
+      "zh-Hant": "找不到鎖屏程式，請先執行 install.sh",
+      "en": "Lock screen binary not found. Run install.sh",
+      "ja": "ロック画面が見つかりません。install.sh を実行",
+      "ko": "잠금 화면 없음. install.sh 실행"
+    },
+    "cli.test.running": {
+      "zh-Hans": "测试锁屏覆盖层（%s 秒后自动退出）...",
+      "zh-Hant": "測試鎖屏覆蓋層（%s 秒後自動退出）...",
+      "en": "Testing lock overlay (%s s)…",
+      "ja": "ロック画面をテスト（%s 秒）…",
+      "ko": "잠금 화면 테스트 (%s초)…"
+    },
+    "cli.test.done": {
+      "zh-Hans": "测试完成",
+      "zh-Hant": "測試完成",
+      "en": "Test complete",
+      "ja": "テスト完了",
+      "ko": "테스트 완료"
+    },
+    "cli.uninstall.stats_title": {
+      "zh-Hans": "你和猫猫的日子",
+      "zh-Hant": "你和貓貓的日子",
+      "en": "Your time with the cat",
+      "ja": "あなたとねこの日々",
+      "ko": "고양이와 함께한 날"
+    },
+    "cli.uninstall.nights": {
+      "zh-Hans": "相处晚数  %s 晚",
+      "zh-Hant": "相處晚數  %s 晚",
+      "en": "Nights together  %s",
+      "ja": "一緒の夜  %s",
+      "ko": "함께한 밤  %s"
+    },
+    "cli.uninstall.visits": {
+      "zh-Hans": "来过次数  %s / %s",
+      "zh-Hant": "來過次數  %s / %s",
+      "en": "Visits  %s / %s",
+      "ja": "来訪  %s / %s",
+      "ko": "방문  %s / %s"
+    },
+    "cli.uninstall.streak": {
+      "zh-Hans": "连续来住  %s 晚",
+      "zh-Hant": "連續來住  %s 晚",
+      "en": "Streak  %s nights",
+      "ja": "連続 %s 夜",
+      "ko": "연속 %s밤"
+    },
+    "cli.uninstall.confirm_prompt": {
+      "zh-Hans": "确定要卸载吗？请输入：",
+      "zh-Hant": "確定要解除安裝嗎？請輸入：",
+      "en": "Uninstall? Type:",
+      "ja": "アンインストールしますか？入力:",
+      "ko": "제거할까요? 입력:"
+    },
+    "cli.uninstall.confirm_phrase": {
+      "zh-Hans": "送走猫猫",
+      "zh-Hant": "送走貓貓",
+      "en": "goodbye cat",
+      "ja": "さようならねこ",
+      "ko": "고양이 안녕"
+    },
+    "cli.uninstall.cancelled": {
+      "zh-Hans": "卸载已取消",
+      "zh-Hant": "解除安裝已取消",
+      "en": "Uninstall cancelled",
+      "ja": "キャンセルしました",
+      "ko": "제거 취소"
+    },
+    "cli.uninstall.step.schedule": {
+      "zh-Hans": "移除定时任务...",
+      "zh-Hant": "移除定時任務...",
+      "en": "Removing schedule…",
+      "ja": "スケジュールを削除…",
+      "ko": "일정 제거 중…"
+    },
+    "cli.uninstall.step.config": {
+      "zh-Hans": "清理配置文件...",
+      "zh-Hant": "清理設定檔...",
+      "en": "Cleaning config…",
+      "ja": "設定を削除…",
+      "ko": "설정 정리 중…"
+    },
+    "cli.uninstall.step.command": {
+      "zh-Hans": "移除命令...",
+      "zh-Hant": "移除命令...",
+      "en": "Removing command…",
+      "ja": "コマンドを削除…",
+      "ko": "명령 제거 중…"
+    },
+    "cli.uninstall.done": {
+      "zh-Hans": "已完全卸载",
+      "zh-Hant": "已完全解除安裝",
+      "en": "Fully uninstalled",
+      "ja": "アンインストール完了",
+      "ko": "완전히 제거됨"
+    },
+    "cli.uninstall.farewell": {
+      "zh-Hans": "猫猫带着行李走了。它会记得你的",
+      "zh-Hant": "貓貓帶著行李走了。牠會記得你的",
+      "en": "The cat packed its bags. It will remember you.",
+      "ja": "ねこは荷物を持って去りました。また覚えています",
+      "ko": "고양이가 짐을 들고 떠났어요. 당신을 기억할 거예요"
+    },
+    "cli.help.usage": {
+      "zh-Hans": "用法",
+      "zh-Hant": "用法",
+      "en": "Usage",
+      "ja": "使い方",
+      "ko": "사용법"
+    },
+    "cli.help.default": {
+      "zh-Hans": "今晚猫猫状态",
+      "zh-Hant": "今晚貓貓狀態",
+      "en": "Tonight's cat status",
+      "ja": "今夜のねこ状態",
+      "ko": "오늘 밤 고양이 상태"
+    },
+    "cli.help.init": {
+      "zh-Hans": "领养 / 重新设置",
+      "zh-Hant": "領養 / 重新設定",
+      "en": "Adopt / reconfigure",
+      "ja": "迎え入れ / 再設定",
+      "ko": "입양 / 재설정"
+    },
+    "cli.help.status": {
+      "zh-Hans": "猫猫到访记录",
+      "zh-Hant": "貓貓到訪記錄",
+      "en": "Visit history",
+      "ja": "訪問記録",
+      "ko": "방문 기록"
+    },
+    "cli.help.config": {
+      "zh-Hans": "查看猫猫日程",
+      "zh-Hant": "查看貓貓日程",
+      "en": "View schedule",
+      "ja": "スケジュール表示",
+      "ko": "일정 보기"
+    },
+    "cli.help.config_edit": {
+      "zh-Hans": "修改猫猫日程",
+      "zh-Hant": "修改貓貓日程",
+      "en": "Edit schedule",
+      "ja": "スケジュール変更",
+      "ko": "일정 수정"
+    },
+    "cli.help.tonight": {
+      "zh-Hans": "今晚不让猫猫来睡觉",
+      "zh-Hant": "今晚不讓貓貓來睡覺",
+      "en": "Skip cat tonight",
+      "ja": "今夜はねこを休む",
+      "ko": "오늘 밤 고양이 쉬기"
+    },
+    "cli.help.log": {
+      "zh-Hans": "猫猫来访历史",
+      "zh-Hant": "貓貓來訪歷史",
+      "en": "Visit log",
+      "ja": "来訪履歴",
+      "ko": "방문 기록"
+    },
+    "cli.help.test": {
+      "zh-Hans": "测试锁屏（默认 10 秒）",
+      "zh-Hant": "測試鎖屏（預設 10 秒）",
+      "en": "Test lock screen (default 10s)",
+      "ja": "ロック画面テスト（既定10秒）",
+      "ko": "잠금 테스트 (기본 10초)"
+    },
+    "cli.help.uninstall": {
+      "zh-Hans": "卸载",
+      "zh-Hant": "解除安裝",
+      "en": "Uninstall",
+      "ja": "アンインストール",
+      "ko": "제거"
+    },
+    "cli.help.help": {
+      "zh-Hans": "显示帮助",
+      "zh-Hant": "顯示說明",
+      "en": "Show help",
+      "ja": "ヘルプ",
+      "ko": "도움말"
+    },
+    "cli.error.unknown_command": {
+      "zh-Hans": "未知命令: %s",
+      "zh-Hant": "未知命令: %s",
+      "en": "Unknown command: %s",
+      "ja": "不明なコマンド: %s",
+      "ko": "알 수 없는 명령: %s"
+    },
+    "cli.error.not_installed": {
+      "zh-Hans": "Error: Cat Bedtime is not properly installed.\nRun install.sh first or check your installation.",
+      "zh-Hant": "Error: Cat Bedtime is not properly installed.\nRun install.sh first or check your installation.",
+      "en": "Error: Cat Bedtime is not properly installed.\nRun install.sh first or check your installation.",
+      "ja": "Error: Cat Bedtime が正しくインストールされていません。\ninstall.sh を実行してください。",
+      "ko": "Error: Cat Bedtime가 올바르게 설치되지 않았습니다.\ninstall.sh를 실행하세요."
+    },
+    "init.welcome.line1": {
+      "zh-Hans": "每天到了约定时间，",
+      "zh-Hant": "每天到了約定時間，",
+      "en": "Every day at the agreed time,",
+      "ja": "約束の時間になると、",
+      "ko": "약속한 시간이 되면,"
+    },
+    "init.welcome.line2": {
+      "zh-Hans": "它都会住进你的电脑",
+      "zh-Hant": "牠都會住進你的電腦",
+      "en": "it moves into your Mac",
+      "ja": "この Mac に入ってきます",
+      "ko": "Mac 안으로 들어옵니다"
+    },
+    "init.welcome.line3": {
+      "zh-Hans": "为了保证它的睡眠，",
+      "zh-Hant": "為了保證牠的睡眠，",
+      "en": "While it sleeps,",
+      "ja": "ねこが眠っている間は、",
+      "ko": "고양이가 자는 동안"
+    },
+    "init.welcome.line4": {
+      "zh-Hans": "你就不能使用电脑了哦",
+      "zh-Hant": "你就不能使用電腦了哦",
+      "en": "you can't use the computer",
+      "ja": "パソコンを使えません",
+      "ko": "컴퓨터를 쓸 수 없어요"
+    },
+    "init.bedtime.prompt": {
+      "zh-Hans": "猫猫几点才能睡觉？",
+      "zh-Hant": "貓貓幾點才能睡覺？",
+      "en": "What time should the cat sleep?",
+      "ja": "ねこは何時に寝ますか？",
+      "ko": "고양이는 몇 시에 자나요?"
+    },
+    "init.wakeup.prompt": {
+      "zh-Hans": "猫猫早上几点走？",
+      "zh-Hant": "貓貓早上幾點走？",
+      "en": "What time does the cat leave?",
+      "ja": "ねこは朝何時に去りますか？",
+      "ko": "고양이는 아침 몇 시에 가나요?"
+    },
+    "init.days.prompt": {
+      "zh-Hans": "猫猫每周几可以来睡觉？",
+      "zh-Hant": "貓貓每週幾可以來睡覺？",
+      "en": "Which nights can the cat visit?",
+      "ja": "週の何曜日に来られますか？",
+      "ko": "매주 어느 날 올 수 있나요?"
+    },
+    "init.days.hint": {
+      "zh-Hans": "其他日子猫猫自己在外面浪",
+      "zh-Hant": "其他日子貓貓自己在外面浪",
+      "en": "Other nights the cat roams free",
+      "ja": "それ以外の夜はねこは自由です",
+      "ko": "다른 날은 고양이가 자유롭게 놀아요"
+    },
+    "init.contract.title": {
+      "zh-Hans": "领养协议",
+      "zh-Hant": "領養協議",
+      "en": "Adoption agreement",
+      "ja": "迎え入れ同意",
+      "ko": "입양 동의"
+    },
+    "init.contract.sleep": {
+      "zh-Hans": "  猫猫睡觉：%s    猫猫离开：%s",
+      "zh-Hant": "  貓貓睡覺：%s    貓貓離開：%s",
+      "en": "  Bedtime: %s    Wake-up: %s",
+      "ja": "  就寝: %s    起床: %s",
+      "ko": "  취침: %s    기상: %s"
+    },
+    "init.contract.days": {
+      "zh-Hans": "  来睡日子：%s",
+      "zh-Hant": "  來睡日子：%s",
+      "en": "  Visit days: %s",
+      "ja": "  来る曜日: %s",
+      "ko": "  방문 요일: %s"
+    },
+    "init.contract.remind": {
+      "zh-Hans": "  睡前 %s 分钟和 %s 分钟会提醒你",
+      "zh-Hant": "  睡前 %s 分鐘和 %s 分鐘會提醒你",
+      "en": "  Reminders %s and %s min before bed",
+      "ja": "  就寝 %s 分前と %s 分前に通知",
+      "ko": "  취침 %s분·%s분 전 알림"
+    },
+    "init.pledge_prompt": {
+      "zh-Hans": "最后一步：请键入下面这句完成领养协议：",
+      "zh-Hant": "最後一步：請鍵入下面這句完成領養協議：",
+      "en": "Last step — type this sentence:",
+      "ja": "最後に、この文を入力:",
+      "ko": "마지막 — 아래 문장을 입력:"
+    },
+    "init.cancelled": {
+      "zh-Hans": "未正确输入，设置已取消",
+      "zh-Hant": "未正確輸入，設定已取消",
+      "en": "Incorrect text. Setup cancelled.",
+      "ja": "入力が違います。設定を中止しました",
+      "ko": "입력 오류. 설정 취소"
+    },
+    "init.retry": {
+      "zh-Hans": "想好了再来：zzz init",
+      "zh-Hant": "想好了再來：zzz init",
+      "en": "When ready: zzz init",
+      "ja": "準備ができたら: zzz init",
+      "ko": "준비되면: zzz init"
+    },
+    "init.schedule_ok": {
+      "zh-Hans": "定时任务已激活",
+      "zh-Hant": "定時任務已啟用",
+      "en": "Schedule activated",
+      "ja": "スケジュールを有効化",
+      "ko": "일정 활성화됨"
+    },
+    "init.done.title": {
+      "zh-Hans": "领养完成！",
+      "zh-Hant": "領養完成！",
+      "en": "Adoption complete!",
+      "ja": "迎え入れ完了！",
+      "ko": "입양 완료!"
+    },
+    "init.done.line1": {
+      "zh-Hans": "猫猫已经记住你家地址了",
+      "zh-Hant": "貓貓已經記住你家地址了",
+      "en": "The cat knows where you live now",
+      "ja": "ねこはあなたの家を覚えました",
+      "ko": "고양이가 집 주소를 기억했어요"
+    },
+    "init.done.line2": {
+      "zh-Hans": "今晚 %s，它会住进你的电脑睡觉",
+      "zh-Hant": "今晚 %s，牠會住進你的電腦睡覺",
+      "en": "Tonight at %s it moves in to sleep",
+      "ja": "今夜 %s に Mac で寝ます",
+      "ko": "오늘 밤 %s에 Mac에서 잠"
+    },
+    "init.done.line3": {
+      "zh-Hans": "睡前 %s 分钟和 %s 分钟会提醒你",
+      "zh-Hant": "睡前 %s 分鐘和 %s 分鐘會提醒你",
+      "en": "Reminders %s and %s min before bed",
+      "ja": "就寝 %s・%s 分前に通知",
+      "ko": "취침 %s·%s분 전 알림"
+    },
+    "init.done.hint": {
+      "zh-Hans": "输入 zzz 查看今晚状态",
+      "zh-Hant": "輸入 zzz 查看今晚狀態",
+      "en": "Run zzz for tonight's status",
+      "ja": "zzz で今夜の状態を確認",
+      "ko": "zzz 로 오늘 상태 확인"
+    },
+    "ui.error.time_parse": {
+      "zh-Hans": "没听懂这个时间，试试这些写法：23、23:00、23点、23点半、11pm",
+      "zh-Hant": "沒聽懂這個時間，試試這些寫法：23、23:00、23點、23點半、11pm",
+      "en": "Couldn't parse that time. Try: 23, 23:00, 11pm",
+      "ja": "時刻が分かりません。23、23:00、11pm など",
+      "ko": "시간을 이해하지 못했어요. 23, 23:00, 11pm 등"
+    },
+    "ui.multiselect.hint": {
+      "zh-Hans": "(空格切换, 回车确认)",
+      "zh-Hant": "(空格切換, Enter確認)",
+      "en": "(space toggle, enter confirm)",
+      "ja": "(Spaceで切替、Enterで確定)",
+      "ko": "(스페이스 전환, Enter 확인)"
+    },
+    "ui.select.hint": {
+      "zh-Hans": "(↑↓选择, 回车确认)",
+      "zh-Hant": "(↑↓選擇, Enter確認)",
+      "en": "(↑↓ select, enter confirm)",
+      "ja": "(↑↓で選択、Enterで確定)",
+      "ko": "(↑↓ 선택, Enter 확인)"
+    },
+    "ui.selected": {
+      "zh-Hans": "已选：%s",
+      "zh-Hant": "已選：%s",
+      "en": "Selected: %s",
+      "ja": "選択: %s",
+      "ko": "선택: %s"
+    },
+    "ui.retry": {
+      "zh-Hans": "再试一次（第 %s/%s 次）",
+      "zh-Hant": "再試一次（第 %s/%s 次）",
+      "en": "Try again (%s/%s)",
+      "ja": "再試行 (%s/%s)",
+      "ko": "다시 시도 (%s/%s)"
+    },
+    "ui.type_confirm.prompt": {
+      "zh-Hans": "请输入：",
+      "zh-Hant": "請輸入：",
+      "en": "Type:",
+      "ja": "入力:",
+      "ko": "입력:"
+    },
+    "ui.type_confirm.mismatch": {
+      "zh-Hans": "输入不匹配，请完整输入上面的确认文字",
+      "zh-Hant": "輸入不匹配，請完整輸入上面的確認文字",
+      "en": "Text doesn't match. Type the full confirmation.",
+      "ja": "一致しません。全文を入力してください",
+      "ko": "일치하지 않아요. 전체 문장을 입력하세요"
+    },
+    "install.title": {
+      "zh-Hans": "安装 Cat Bedtime",
+      "zh-Hant": "安裝 Cat Bedtime",
+      "en": "Install Cat Bedtime",
+      "ja": "Cat Bedtime をインストール",
+      "ko": "Cat Bedtime 설치"
+    },
+    "install.step.check": {
+      "zh-Hans": "检查环境...",
+      "zh-Hant": "檢查環境...",
+      "en": "Checking environment…",
+      "ja": "環境を確認…",
+      "ko": "환경 확인 중…"
+    },
+    "install.error.macos": {
+      "zh-Hans": "Cat Bedtime 目前只支持 macOS",
+      "zh-Hant": "Cat Bedtime 目前只支援 macOS",
+      "en": "Cat Bedtime only supports macOS",
+      "ja": "Cat Bedtime は macOS のみ対応",
+      "ko": "Cat Bedtime는 macOS만 지원"
+    },
+    "install.error.python": {
+      "zh-Hans": "需要 Python 3（macOS 通常自带）",
+      "zh-Hant": "需要 Python 3（macOS 通常內建）",
+      "en": "Python 3 required (usually preinstalled on macOS)",
+      "ja": "Python 3 が必要です",
+      "ko": "Python 3 필요"
+    },
+    "install.check_ok": {
+      "zh-Hans": "环境检查通过",
+      "zh-Hant": "環境檢查通過",
+      "en": "Environment OK",
+      "ja": "環境 OK",
+      "ko": "환경 확인 완료"
+    },
+    "install.step.dir": {
+      "zh-Hans": "创建安装目录...",
+      "zh-Hant": "建立安裝目錄...",
+      "en": "Creating install directory…",
+      "ja": "インストール先を作成…",
+      "ko": "설치 디렉터리 생성…"
+    },
+    "install.step.files": {
+      "zh-Hans": "安装文件...",
+      "zh-Hant": "安裝檔案...",
+      "en": "Installing files…",
+      "ja": "ファイルをインストール…",
+      "ko": "파일 설치 중…"
+    },
+    "install.step.link": {
+      "zh-Hans": "创建 zzz 命令...",
+      "zh-Hant": "建立 zzz 命令...",
+      "en": "Creating zzz command…",
+      "ja": "zzz コマンドを作成…",
+      "ko": "zzz 명령 생성…"
+    },
+    "install.linked": {
+      "zh-Hans": "已安装到 /usr/local/bin/zzz",
+      "zh-Hant": "已安裝到 /usr/local/bin/zzz",
+      "en": "Installed to /usr/local/bin/zzz",
+      "ja": "/usr/local/bin/zzz にインストール",
+      "ko": "/usr/local/bin/zzz에 설치됨"
+    },
+    "install.path_added": {
+      "zh-Hans": "已添加到 PATH（重启终端或 source ~/.zshrc 生效）",
+      "zh-Hant": "已加入 PATH（重啟終端或 source ~/.zshrc）",
+      "en": "Added to PATH (restart terminal or source ~/.zshrc)",
+      "ja": "PATH に追加（ターミナル再起動または source ~/.zshrc）",
+      "ko": "PATH 추가됨 (터미널 재시작 또는 source ~/.zshrc)"
+    },
+    "install.done.title": {
+      "zh-Hans": "安装完成！",
+      "zh-Hant": "安裝完成！",
+      "en": "Installation complete!",
+      "ja": "インストール完了！",
+      "ko": "설치 완료!"
+    },
+    "install.done.next": {
+      "zh-Hans": "即将进入猫猫领养设置...",
+      "zh-Hant": "即將進入貓貓領養設定...",
+      "en": "Starting cat adoption setup…",
+      "ja": "ねこの迎え入れ設定を開始…",
+      "ko": "고양이 입양 설정을 시작합니다…"
+    }
+  }
+}

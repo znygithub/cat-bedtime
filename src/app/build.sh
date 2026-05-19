@@ -13,15 +13,18 @@ echo "Compiling Cat Bedtime app (universal: arm64 + x86_64)..."
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
+L10N_SWIFT="$SCRIPT_DIR/../shared/L10n.swift"
+LOCALES_SRC="$SCRIPT_DIR/../../locales"
+
 swiftc -O -target arm64-apple-macos12 \
   -o "$TMP_DIR/zzz-app.arm64" \
   -framework Cocoa -framework SwiftUI -framework UserNotifications \
-  "$SCRIPT_DIR/CatBedtimeApp.swift"
+  "$L10N_SWIFT" "$SCRIPT_DIR/CatBedtimeApp.swift"
 
 swiftc -O -target x86_64-apple-macos12 \
   -o "$TMP_DIR/zzz-app.x86_64" \
   -framework Cocoa -framework SwiftUI -framework UserNotifications \
-  "$SCRIPT_DIR/CatBedtimeApp.swift"
+  "$L10N_SWIFT" "$SCRIPT_DIR/CatBedtimeApp.swift"
 
 lipo -create -output "$TMP_DIR/zzz-app" \
   "$TMP_DIR/zzz-app.arm64" \
@@ -47,6 +50,8 @@ cp "$SCRIPT_DIR/../../bin/zzz-overlay" "$APP_BUNDLE/Contents/Resources/bin/zzz-o
 cp -R "$SCRIPT_DIR/../../lib" "$APP_BUNDLE/Contents/Resources/lib"
 cp -R "$SCRIPT_DIR/../../src/cli" "$APP_BUNDLE/Contents/Resources/src/cli"
 cp -R "$SCRIPT_DIR/../../assets" "$APP_BUNDLE/Contents/Resources/assets"
+mkdir -p "$APP_BUNDLE/Contents/Resources/locales"
+cp "$LOCALES_SRC/messages.json" "$APP_BUNDLE/Contents/Resources/locales/messages.json"
 chmod +x "$APP_BUNDLE/Contents/Resources/bin/zzz-overlay"
 chmod +x "$APP_BUNDLE/Contents/Resources/src/cli/daemon.sh"
 
@@ -81,6 +86,16 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'PLIST'
   <string>banner</string>
   <key>LSUIElement</key>
   <false/>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>zh-Hans</string>
+    <string>zh-Hant</string>
+    <string>ja</string>
+    <string>ko</string>
+  </array>
 </dict>
 </plist>
 PLIST

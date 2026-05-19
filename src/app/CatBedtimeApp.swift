@@ -586,11 +586,7 @@ struct GhostButtonStyle: ButtonStyle {
 
 // MARK: - Day Grid
 
-private let dayLabels: [(key: String, short: String, full: String)] = [
-    ("1", "一", "周一"), ("2", "二", "周二"), ("3", "三", "周三"),
-    ("4", "四", "周四"), ("5", "五", "周五"), ("6", "六", "周六"),
-    ("7", "日", "周日"),
-]
+private let dayKeys = ["1", "2", "3", "4", "5", "6", "7"]
 
 struct DayGrid: View {
     @Binding var activeDays: Set<String>
@@ -598,16 +594,17 @@ struct DayGrid: View {
 
     var body: some View {
         HStack(spacing: compact ? 4 : 6) {
-            ForEach(dayLabels, id: \.key) { day in
+            ForEach(dayKeys, id: \.self) { key in
+                let idx = Int(key) ?? 1
                 DayToggle(
-                    label: compact ? day.short : day.full,
-                    isOn: activeDays.contains(day.key),
+                    label: compact ? L10n.dayShort(idx) : L10n.dayFull(idx),
+                    isOn: activeDays.contains(key),
                     compact: compact
                 ) {
-                    if activeDays.contains(day.key) {
-                        activeDays.remove(day.key)
+                    if activeDays.contains(key) {
+                        activeDays.remove(key)
                     } else {
-                        activeDays.insert(day.key)
+                        activeDays.insert(key)
                     }
                 }
             }
@@ -626,12 +623,12 @@ struct WelcomeView: View {
             ProgressDots(total: 3, current: 1)
                 .padding(.bottom, 18)
 
-            Text("你打算领养这只小猫吗？")
+            Text(L10n.t("welcome.title"))
                 .font(Lamp.rounded(28, weight: .bold))
                 .foregroundColor(Lamp.creamText)
                 .padding(.bottom, 8)
 
-            Text("每天到了约定时间，它都会住进你的电脑\n为了保证它的睡眠，你就不能使用电脑了哦")
+            Text(L10n.t("welcome.body"))
                 .font(Lamp.rounded(15, weight: .medium))
                 .foregroundColor(Lamp.sandMuted)
                 .lineSpacing(6)
@@ -656,7 +653,7 @@ struct WelcomeView: View {
 
             HStack {
                 Spacer()
-                Button("好想养") { state.screen = .config }
+                Button(L10n.t("welcome.cta")) { state.screen = .config }
                     .buttonStyle(LampButtonStyle())
                 Spacer()
             }
@@ -684,10 +681,10 @@ struct ScheduleConfigView: View {
 
             // Sleep time
             VStack(alignment: .leading, spacing: 2) {
-                Text("猫猫休眠时间")
+                Text(L10n.t("config.bedtime.title"))
                     .font(Lamp.rounded(17, weight: .semibold))
                     .foregroundColor(Lamp.creamText)
-                Text("千万不要太晚哦，猫猫也需要一个好睡眠")
+                Text(L10n.t("config.bedtime.hint"))
                     .font(Lamp.rounded(13))
                     .foregroundColor(Lamp.duskDim)
                     .italic()
@@ -695,7 +692,7 @@ struct ScheduleConfigView: View {
                 DatePicker("", selection: $bedtime, displayedComponents: .hourAndMinute)
                     .datePickerStyle(.compact)
                     .labelsHidden()
-                    .environment(\.locale, Locale(identifier: "zh_CN"))
+                    .environment(\.locale, L10n.locale)
                     .colorScheme(.dark)
                     .accentColor(Lamp.amberMoon)
             }
@@ -703,10 +700,10 @@ struct ScheduleConfigView: View {
 
             // Wake time
             VStack(alignment: .leading, spacing: 2) {
-                Text("猫猫起床时间")
+                Text(L10n.t("config.wakeup.title"))
                     .font(Lamp.rounded(17, weight: .semibold))
                     .foregroundColor(Lamp.creamText)
-                Text("到这个时间后，猫猫就会离开，你可以使用电脑")
+                Text(L10n.t("config.wakeup.hint"))
                     .font(Lamp.rounded(13))
                     .foregroundColor(Lamp.duskDim)
                     .italic()
@@ -714,7 +711,7 @@ struct ScheduleConfigView: View {
                 DatePicker("", selection: $wakeup, displayedComponents: .hourAndMinute)
                     .datePickerStyle(.compact)
                     .labelsHidden()
-                    .environment(\.locale, Locale(identifier: "zh_CN"))
+                    .environment(\.locale, L10n.locale)
                     .colorScheme(.dark)
                     .accentColor(Lamp.amberMoon)
             }
@@ -722,7 +719,7 @@ struct ScheduleConfigView: View {
 
             // Day selection
             VStack(alignment: .leading, spacing: 2) {
-                Text("猫猫周几可以来")
+                Text(L10n.t("config.days.title"))
                     .font(Lamp.rounded(17, weight: .semibold))
                     .foregroundColor(Lamp.creamText)
                     .padding(.bottom, 8)
@@ -732,7 +729,7 @@ struct ScheduleConfigView: View {
 
             Spacer()
 
-            Button("确认") {
+            Button(L10n.t("config.confirm")) {
                 syncConfigFromPickers()
                 state.screen = .agreement
             }
@@ -764,28 +761,28 @@ struct AgreementView: View {
     @State private var inputBorderColor = Lamp.borderDefault
     @State private var shaking = false
 
-    private let requiredPhrase = "我愿意遵守承诺让猫猫好好休息"
+    private var requiredPhrase: String { L10n.pledgePhrase }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ProgressDots(total: 3, current: 3)
                 .padding(.bottom, 24)
 
-            Text("领养协议签署")
+            Text(L10n.t("agreement.title"))
                 .font(Lamp.rounded(22, weight: .bold))
                 .foregroundColor(Lamp.creamText)
                 .padding(.bottom, 2)
-            Text("请仔细阅读并签字确认")
+            Text(L10n.t("agreement.subtitle"))
                 .font(Lamp.rounded(13))
                 .foregroundColor(Lamp.duskDim)
                 .padding(.bottom, 18)
 
             // Summary card
             VStack(spacing: 0) {
-                summaryRow(icon: "🛏️", label: "猫猫睡觉", value: mgr.config.bedtime)
-                summaryRow(icon: "🌅", label: "猫猫离开", value: mgr.config.wakeup)
-                summaryRow(icon: "📅", label: "来睡日子", value: daysDisplayText())
-                summaryRow(icon: "🔔", label: "睡前提醒", value: "15 分钟", showBorder: false)
+                summaryRow(icon: "🛏️", label: L10n.t("agreement.sleep"), value: mgr.config.bedtime)
+                summaryRow(icon: "🌅", label: L10n.t("agreement.leave"), value: mgr.config.wakeup)
+                summaryRow(icon: "📅", label: L10n.t("agreement.days"), value: daysDisplayText())
+                summaryRow(icon: "🔔", label: L10n.t("agreement.reminder"), value: L10n.tf("agreement.reminder_value", 15), showBorder: false)
             }
             .padding(16)
             .background(Lamp.glass1)
@@ -797,13 +794,13 @@ struct AgreementView: View {
             .padding(.bottom, 16)
 
             // Pledge
-            Text("请键入\u{201C}" + requiredPhrase + "\u{201D}完成领养协议")
+            Text(L10n.ts("agreement.pledge_prompt", requiredPhrase))
                 .font(Lamp.rounded(13, weight: .medium))
                 .foregroundColor(Lamp.amberMoon)
                 .textSelection(.enabled)
                 .padding(.bottom, 10)
 
-            TextField("在此键入上面的句子", text: $pledge, onCommit: tryConfirm)
+            TextField(L10n.t("agreement.pledge_placeholder"), text: $pledge, onCommit: tryConfirm)
                 .textFieldStyle(.plain)
                 .font(Lamp.rounded(15, weight: .medium))
                 .foregroundColor(Lamp.creamText)
@@ -825,7 +822,7 @@ struct AgreementView: View {
 
             Spacer()
 
-            Button("确认领养") { tryConfirm() }
+            Button(L10n.t("agreement.confirm")) { tryConfirm() }
                 .buttonStyle(LampButtonStyle(block: true))
         }
         .padding(.top, 52)
@@ -837,7 +834,7 @@ struct AgreementView: View {
     private func tryConfirm() {
         if pledge.trimmingCharacters(in: .whitespaces) == requiredPhrase {
             inputBorderColor = Lamp.sageOk
-            message = "已确认！"
+            message = L10n.t("agreement.confirmed")
             messageColor = Lamp.sageOk
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 mgr.activateOnboarding()
@@ -848,9 +845,9 @@ struct AgreementView: View {
             inputBorderColor = Lamp.clayWarn
             messageColor = Lamp.clayWarn
             if attempts >= 3 {
-                message = "未正确输入，想好了再来哦～"
+                message = L10n.t("agreement.wrong_final")
             } else {
-                message = "输入不正确，还有 \(3 - attempts) 次机会"
+                message = L10n.tf("agreement.wrong_attempts", 3 - attempts)
             }
             // shake
             withAnimation(.linear(duration: 0.07).repeatCount(5, autoreverses: true)) {
@@ -864,11 +861,7 @@ struct AgreementView: View {
     }
 
     private func daysDisplayText() -> String {
-        let sorted = mgr.config.days.sorted()
-        if sorted == ["1","2","3","4","5","6","7"] { return "每天" }
-        if sorted == ["1","2","3","4","5"] { return "周一到周五" }
-        let names = ["1":"一","2":"二","3":"三","4":"四","5":"五","6":"六","7":"日"]
-        return "周" + sorted.compactMap { names[$0] }.joined(separator: "、")
+        L10n.daysSummary(sorted: mgr.config.days.sorted())
     }
 
     private func summaryRow(icon: String, label: String, value: String, showBorder: Bool = true) -> some View {
@@ -905,7 +898,7 @@ struct LockPreviewView: View {
             Lamp.nightSurface
             VStack(spacing: 12) {
                 Spacer()
-                Text("正在播放锁屏效果预览")
+                Text(L10n.t("lock_preview.playing"))
                     .font(Lamp.rounded(14, weight: .medium))
                     .foregroundColor(Lamp.sandMuted)
                 Spacer()
@@ -995,7 +988,7 @@ struct DashboardView: View {
                 Button(action: { showDelay = true }) {
                     HStack(spacing: 6) {
                         Text("⏰")
-                        Text("推迟")
+                        Text(L10n.t("dashboard.delay"))
                             .font(Lamp.rounded(13, weight: .semibold))
                     }
                     .foregroundColor(Lamp.sandMuted)
@@ -1018,12 +1011,12 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 8) {
                         Text("🌙")
-                        Text("睡眠时间配置")
+                        Text(L10n.t("dashboard.sleep_config"))
                             .font(Lamp.rounded(15, weight: .bold))
                             .foregroundColor(Lamp.creamText)
                     }
-                    timeRow(label: "睡觉", time: $bedtime)
-                    timeRow(label: "起床", time: $wakeup)
+                    timeRow(label: L10n.t("dashboard.sleep"), time: $bedtime)
+                    timeRow(label: L10n.t("dashboard.wakeup"), time: $wakeup)
                 }
                 .padding(20)
                 .background(Lamp.glass2)
@@ -1037,7 +1030,7 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 8) {
                         Text("📅")
-                        Text("每周哪天来")
+                        Text(L10n.t("dashboard.weekly"))
                             .font(Lamp.rounded(15, weight: .bold))
                             .foregroundColor(Lamp.creamText)
                     }
@@ -1060,12 +1053,12 @@ struct DashboardView: View {
             // Confirm button
             VStack(spacing: 8) {
                 if savedNotice {
-                    Text("已保存！")
+                    Text(L10n.t("dashboard.saved"))
                         .font(Lamp.rounded(13, weight: .medium))
                         .foregroundColor(Lamp.sageOk)
                         .transition(.opacity)
                 }
-                Button("确认修改") { saveChanges() }
+                Button(L10n.t("dashboard.save")) { saveChanges() }
                     .buttonStyle(LampButtonStyle(block: true))
             }
             .padding(.horizontal, 8)
@@ -1103,12 +1096,7 @@ struct DashboardView: View {
     }
 
     private func dashDaysSummary() -> String {
-        let sorted = activeDays.sorted()
-        if sorted == ["1","2","3","4","5","6","7"] { return "每天" }
-        if sorted.isEmpty { return "无" }
-        if sorted == ["1","2","3","4","5"] { return "周一到周五" }
-        let names = ["1":"一","2":"二","3":"三","4":"四","5":"五","6":"六","7":"日"]
-        return "周" + sorted.compactMap { names[$0] }.joined(separator: "、")
+        L10n.daysSummary(sorted: activeDays.sorted())
     }
 
     private func timeRow(label: String, time: Binding<Date>) -> some View {
@@ -1120,7 +1108,7 @@ struct DashboardView: View {
             DatePicker("", selection: time, displayedComponents: .hourAndMinute)
                 .datePickerStyle(.compact)
                 .labelsHidden()
-                .environment(\.locale, Locale(identifier: "zh_CN"))
+                .environment(\.locale, L10n.locale)
                 .colorScheme(.dark)
                 .accentColor(Lamp.amberMoon)
         }
@@ -1156,23 +1144,23 @@ struct DelayPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("⏰ 往后推迟时间")
+            Text(L10n.t("delay.title"))
                 .font(Lamp.rounded(17, weight: .bold))
                 .foregroundColor(Lamp.creamText)
                 .padding(.bottom, 4)
 
-            Text("有特殊情况，请提前告知猫猫")
+            Text(L10n.t("delay.hint"))
                 .font(Lamp.rounded(13))
                 .foregroundColor(Lamp.duskDim)
                 .italic()
                 .padding(.bottom, 14)
 
-            Text("原因（可选）")
+            Text(L10n.t("delay.reason_label"))
                 .font(Lamp.rounded(12, weight: .semibold))
                 .foregroundColor(Lamp.sandMuted)
                 .padding(.bottom, 6)
 
-            TextField("今晚有特殊情况是因为", text: $reason)
+            TextField(L10n.t("delay.reason_placeholder"), text: $reason)
                 .textFieldStyle(.plain)
                 .font(Lamp.rounded(13))
                 .foregroundColor(Lamp.creamText)
@@ -1185,21 +1173,21 @@ struct DelayPopover: View {
                 )
                 .padding(.bottom, 14)
 
-            Text("推迟多久")
+            Text(L10n.t("delay.duration_label"))
                 .font(Lamp.rounded(12, weight: .semibold))
                 .foregroundColor(Lamp.sandMuted)
                 .padding(.bottom, 6)
 
             HStack(spacing: 8) {
-                delayOption("15 分钟", minutes: 15)
-                delayOption("30 分钟", minutes: 30)
-                delayOption("自定义", minutes: 0)
+                delayOption(L10n.t("delay.15min"), minutes: 15)
+                delayOption(L10n.t("delay.30min"), minutes: 30)
+                delayOption(L10n.t("delay.custom"), minutes: 0)
             }
             .padding(.bottom, showCustom ? 0 : 16)
 
             if showCustom {
                 HStack(spacing: 8) {
-                    Text("推迟")
+                    Text(L10n.t("delay.postpone"))
                         .font(Lamp.rounded(13))
                         .foregroundColor(Lamp.sandMuted)
                     TextField("45", text: $customMinutes)
@@ -1215,7 +1203,7 @@ struct DelayPopover: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(Lamp.borderDefault, lineWidth: 1)
                         )
-                    Text("分钟")
+                    Text(L10n.t("delay.minutes"))
                         .font(Lamp.rounded(13))
                         .foregroundColor(Lamp.sandMuted)
                 }
@@ -1223,9 +1211,9 @@ struct DelayPopover: View {
             }
 
             HStack(spacing: 10) {
-                Button("取消") { isPresented = false }
+                Button(L10n.t("delay.cancel")) { isPresented = false }
                     .buttonStyle(GhostButtonStyle())
-                Button("告知猫猫") { confirmDelay() }
+                Button(L10n.t("delay.submit")) { confirmDelay() }
                     .buttonStyle(LampButtonStyle(block: true))
             }
         }
@@ -1272,7 +1260,7 @@ struct DelayPopover: View {
         }
         if minutes <= 0 { minutes = 30 }
 
-        let reasonText = reason.isEmpty ? "推迟\(minutes)分钟" : reason
+        let reasonText = reason.isEmpty ? L10n.tf("delay.default_reason", minutes) : reason
         mgr.writeSkipTonight(reason: reasonText)
         isPresented = false
     }
@@ -1497,11 +1485,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         NSApplication.shared.activate(ignoringOtherApps: true)
 
         let alert = NSAlert()
-        alert.messageText = "确定要退出 Cat Bedtime 吗？"
-        alert.informativeText = "退出只会关闭设置窗口\n睡眠时间和后台定时任务会继续保留，到点仍会锁屏"
+        alert.messageText = L10n.t("quit.title")
+        alert.informativeText = L10n.t("quit.message")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "退出")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: L10n.t("quit.confirm"))
+        alert.addButton(withTitle: L10n.t("quit.cancel"))
 
         return alert.runModal() == .alertFirstButtonReturn
     }
@@ -1514,7 +1502,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let appMenu = NSMenu()
         appMenuItem.submenu = appMenu
         appMenu.addItem(NSMenuItem(
-            title: "Quit Cat Bedtime",
+            title: L10n.t("menu.quit"),
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         ))
@@ -1542,10 +1530,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
 // MARK: - main
 
-NotificationCommand.exitIfRequested()
+@main
+enum CatBedtimeMain {
+    static func main() {
+        NotificationCommand.exitIfRequested()
 
-let delegate = AppDelegate()
-NSApplication.shared.delegate = delegate
-NSApplication.shared.setActivationPolicy(.regular)
-NSApplication.shared.activate(ignoringOtherApps: true)
-NSApplication.shared.run()
+        let delegate = AppDelegate()
+        NSApplication.shared.delegate = delegate
+        NSApplication.shared.setActivationPolicy(.regular)
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        NSApplication.shared.run()
+    }
+}
