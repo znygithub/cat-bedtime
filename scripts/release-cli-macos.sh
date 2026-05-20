@@ -37,7 +37,8 @@ mkdir -p "$CLI_STAGE/src"
 ditto "$ROOT_DIR/src/cli" "$CLI_STAGE/src/cli"
 mkdir -p "$CLI_STAGE/locales"
 install -m 644 "$ROOT_DIR/locales/messages.json" "$CLI_STAGE/locales/messages.json"
-ditto "$ROOT_DIR/assets" "$CLI_STAGE/assets"
+mkdir -p "$CLI_STAGE/assets"
+rsync -a --exclude '*.backup-*' "$ROOT_DIR/assets/" "$CLI_STAGE/assets/"
 
 codesign --verify --verbose=2 "$CLI_STAGE/bin/zzz-overlay"
 

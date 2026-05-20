@@ -9,6 +9,7 @@
 # Large animation assets (downloaded separately)
 assets/*.mov
 assets/*.mp4
+assets/*.backup-*
 
 # Compiled binaries
 bin/zzz-overlay

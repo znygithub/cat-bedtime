@@ -132,10 +132,10 @@ enum LockWindowMath {
 
 /// Breathing loop: intro plays forward once, then ping-pong [loopStart … end] until unlock.
 enum CatVideoPlayback {
-    /// 12分20秒 on the source timeline → 0:12.20 for this clip.
+    /// 12.20s on the source timeline. The current bundled clip is about 15.03s.
     static let breathingLoopStart: Double = 12.20
-    static let endEpsilon: Double = 0.04
-    static let boundaryEpsilon: Double = 0.06
+    static let endEpsilon: Double = 0.02
+    static let boundaryLead: Double = 0.025
 }
 
 // MARK: - Cat video asset
@@ -166,8 +166,8 @@ private final class VideoFrameSource {
     private let loopStart: Double
     private let loopEnd: Double
     private var lastPixelBuffer: CVPixelBuffer?
-    private var breathingMode = false
-    private var playingForward = true
+    private var isInBreathingLoop = false
+    private var playbackDirection: Float = 1.0
     private var timeObserver: Any?
 
     init(url: URL) {
@@ -187,7 +187,8 @@ private final class VideoFrameSource {
         item.add(output)
         player = AVPlayer(playerItem: item)
         player.isMuted = true
-        player.actionAtItemEnd = .pause
+        player.actionAtItemEnd = .none
+        player.automaticallyWaitsToMinimizeStalling = false
         player.playImmediately(atRate: 1.0)
         installBreathingLoopObserver()
     }
@@ -208,7 +209,8 @@ private final class VideoFrameSource {
     }
 
     func currentPixelBuffer() -> CVPixelBuffer? {
-        let itemTime = player.currentTime()
+        let displayTime = output.itemTime(forHostTime: CACurrentMediaTime())
+        let itemTime = displayTime.isValid ? displayTime : player.currentTime()
         if let pixelBuffer = output.copyPixelBuffer(forItemTime: itemTime, itemTimeForDisplay: nil) {
             lastPixelBuffer = pixelBuffer
             return pixelBuffer
@@ -217,7 +219,7 @@ private final class VideoFrameSource {
     }
 
     private func installBreathingLoopObserver() {
-        let interval = CMTime(seconds: 1.0 / 30.0, preferredTimescale: 600)
+        let interval = CMTime(seconds: 1.0 / 60.0, preferredTimescale: 600)
         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             self?.updateBreathingLoop(at: time.seconds)
         }
@@ -225,43 +227,52 @@ private final class VideoFrameSource {
 
     private func updateBreathingLoop(at rawTime: Double) {
         guard rawTime.isFinite else { return }
-        let epsilon = CatVideoPlayback.boundaryEpsilon
+        let lead = CatVideoPlayback.boundaryLead
 
-        if !breathingMode {
-            if rawTime >= loopStart - epsilon {
-                breathingMode = true
-                playingForward = true
-                if rawTime >= loopEnd - epsilon {
-                    playingForward = false
-                    seekToLoopBoundary(loopEnd, rate: -1.0)
-                }
+        if !isInBreathingLoop {
+            if rawTime >= loopStart {
+                isInBreathingLoop = true
+                playbackDirection = 1.0
             }
             return
         }
 
-        if playingForward {
-            if rawTime >= loopEnd - epsilon {
-                playingForward = false
-                seekToLoopBoundary(loopEnd, rate: -1.0)
-            }
-        } else if rawTime <= loopStart + epsilon {
-            playingForward = true
-            seekToLoopBoundary(loopStart, rate: 1.0)
+        if playbackDirection > 0, rawTime >= loopEnd - lead {
+            flipPlaybackDirection(to: -1.0, boundary: loopEnd)
+        } else if playbackDirection < 0, rawTime <= loopStart + lead {
+            flipPlaybackDirection(to: 1.0, boundary: loopStart)
         }
     }
 
-    private func seekToLoopBoundary(_ seconds: Double, rate: Float) {
-        let clamped = min(max(seconds, loopStart), loopEnd)
-        player.pause()
-        player.seek(to: mediaTime(clamped), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+    private func flipPlaybackDirection(to direction: Float, boundary: Double) {
+        guard playbackDirection != direction else { return }
+        playbackDirection = direction
+
+        // Do not pause or seek during the normal loop turn. Keeping the same
+        // decoder timeline alive avoids the blank frame that can appear at a
+        // seek boundary, especially with the bundled HEVC clip.
+        player.rate = direction
+
+        if player.rate == 0 {
+            recoverPlayback(at: boundary, direction: direction)
+        }
+    }
+
+    private func recoverPlayback(at boundary: Double, direction: Float) {
+        let target = min(max(boundary, loopStart), loopEnd)
+        player.seek(to: mediaTime(target), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
             guard let self, finished else { return }
-            self.player.playImmediately(atRate: rate)
+            self.player.playImmediately(atRate: direction)
         }
     }
 
     private func mediaTime(_ seconds: Double) -> CMTime {
         CMTime(seconds: seconds, preferredTimescale: 600)
     }
+}
+
+private enum SharedCatVideoSource {
+    static let source: VideoFrameSource? = CatAnimationAsset.locate().map(VideoFrameSource.init(url:))
 }
 
 private final class VideoRenderer {
@@ -417,7 +428,7 @@ class CatLockScreenView: NSView {
 
     init(frame: NSRect, config: SleepConfig) {
         self.config = config
-        self.video = CatAnimationAsset.locate().map(VideoFrameSource.init(url:))
+        self.video = SharedCatVideoSource.source
         super.init(frame: frame)
         wantsLayer = true
         layer?.contentsScale = NSScreen.main?.backingScaleFactor ?? 2.0
