@@ -172,6 +172,46 @@ minutes_until() {
   echo $diff
 }
 
+time_in_range() {
+  local now_min="$1" start_min="$2" end_min="$3"
+  if (( start_min < end_min )); then
+    (( now_min >= start_min && now_min < end_min ))
+  elif (( start_min > end_min )); then
+    (( now_min >= start_min || now_min < end_min ))
+  else
+    return 1
+  fi
+}
+
+winddown_start_minutes() {
+  local bed_min start_min
+  bed_min=$(time_to_minutes "$BEDTIME")
+  start_min=$(( bed_min - WINDDOWN ))
+  (( start_min < 0 )) && (( start_min += 1440 ))
+  echo "$start_min"
+}
+
+is_in_winddown_window() {
+  local now_min bed_min start_min
+  now_min=$(now_minutes)
+  bed_min=$(time_to_minutes "$BEDTIME")
+  start_min=$(winddown_start_minutes)
+  time_in_range "$now_min" "$start_min" "$bed_min"
+}
+
+is_in_lockdown_window() {
+  local now_min bed_min wake_min
+  now_min=$(now_minutes)
+  bed_min=$(time_to_minutes "$BEDTIME")
+  wake_min=$(time_to_minutes "$WAKEUP")
+  time_in_range "$now_min" "$bed_min" "$wake_min"
+}
+
+is_active_weekday() {
+  local weekday="$1"
+  config_get_array "days" | grep -q "^${weekday}$"
+}
+
 # ── Helper: which weekday this wind-down run belongs to ──────────
 # If bedtime is just after midnight, wind-down can start on the previous
 # calendar day. Active-day checks should use the bedtime date, not the
@@ -180,8 +220,7 @@ active_weekday_for_winddown() {
   local now_min bed_min start_min
   now_min=$(now_minutes)
   bed_min=$(time_to_minutes "$BEDTIME")
-  start_min=$(( bed_min - WINDDOWN ))
-  (( start_min < 0 )) && (( start_min += 1440 ))
+  start_min=$(winddown_start_minutes)
 
   if (( start_min > bed_min && now_min >= start_min )); then
     date -v+1d +%u
@@ -193,7 +232,36 @@ active_weekday_for_winddown() {
 is_active_winddown_day() {
   local active_weekday
   active_weekday=$(active_weekday_for_winddown)
-  config_get_array "days" | grep -q "^${active_weekday}$"
+  is_active_weekday "$active_weekday"
+}
+
+active_weekday_for_lockdown() {
+  local now_min bed_min wake_min
+  now_min=$(now_minutes)
+  bed_min=$(time_to_minutes "$BEDTIME")
+  wake_min=$(time_to_minutes "$WAKEUP")
+
+  if (( bed_min > wake_min && now_min < wake_min )); then
+    date -v-1d +%u
+  else
+    date +%u
+  fi
+}
+
+is_active_lockdown_day() {
+  local active_weekday
+  active_weekday=$(active_weekday_for_lockdown)
+  is_active_weekday "$active_weekday"
+}
+
+current_phase() {
+  if is_in_lockdown_window; then
+    echo "lockdown"
+  elif is_in_winddown_window; then
+    echo "winddown"
+  else
+    echo "idle"
+  fi
 }
 
 # ── Helper: check if Mac slept through the night ────────────────
@@ -239,11 +307,17 @@ wind_down() {
   local total_min=$WINDDOWN
   log "Wind-down phase starting ($total_min minutes until lockdown)"
 
+  local notify_min
+  notify_min=$(minutes_until "$BEDTIME")
+  if (( notify_min <= 0 || notify_min > total_min )); then
+    notify_min=$total_min
+  fi
+
   # First reminder: wind-down start (= "提前 N 分钟"，常见为 30 分钟)
   notify \
     "notify.winddown.title" \
     "notify.winddown.subtitle" \
-    "$total_min" \
+    "$notify_min" \
     "notify.winddown.body" \
     "notify.winddown.button"
 
@@ -393,17 +467,42 @@ wake_up() {
 }
 
 # ── Main sequence ────────────────────────────────────────────────
-wind_down
-wind_down_status=$?
-case "$wind_down_status" in
-  0)
+phase=$(current_phase)
+case "$phase" in
+  winddown)
+    if ! is_active_winddown_day; then
+      log "Current wind-down belongs to inactive weekday ($(active_weekday_for_winddown)); exiting."
+      exit 0
+    fi
+
+    wind_down
+    wind_down_status=$?
+    case "$wind_down_status" in
+      0)
+        lockdown
+        wake_up
+        ;;
+      2)
+        log "Wind-down skipped after reminder because this sleep day is inactive."
+        ;;
+      *)
+        log "Wind-down aborted (Mac slept through bedtime window). Skipping lockdown."
+        ;;
+    esac
+    ;;
+  lockdown)
+    if ! is_active_lockdown_day; then
+      log "Current lock window belongs to inactive weekday ($(active_weekday_for_lockdown)); exiting."
+      exit 0
+    fi
+
+    log "Daemon started during lock window; entering lockdown immediately."
+    brightness_save
+    media_save_volume
     lockdown
     wake_up
     ;;
-  2)
-    log "Wind-down skipped after reminder because this sleep day is inactive."
-    ;;
   *)
-    log "Wind-down aborted (Mac slept through bedtime window). Skipping lockdown."
+    log "Current time is outside wind-down/lock window; exiting."
     ;;
 esac

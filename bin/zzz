@@ -205,6 +205,8 @@ cmd_config() {
         return 1
       fi
       config_set "wakeup" "$value"
+      source "$LIB_DIR/schedule.sh"
+      schedule_update
       ui_success "$(msg cli.success.wakeup "$value")"
       ;;
     winddown)

@@ -7,7 +7,7 @@
 
 **Cat Bedtime** is a macOS bedtime lock screen. You choose when the cat visits and when it leaves; at bedtime it takes over your screen so you actually step away.
 
-https://github.com/znygithub/cat-bedtime/blob/main/docs/product-demo.mp4
+![Product demo](docs/product-demo.gif)
 
 ---
 

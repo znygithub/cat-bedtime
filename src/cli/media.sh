@@ -51,9 +51,11 @@ media_fade_volume() {
 
 # Save current volume for restore later
 media_save_volume() {
+  local saved="$HOME/.timetosleep/saved_volume"
+  [ -f "$saved" ] && return
   local vol
   vol=$(osascript -e 'output volume of (get volume settings)' 2>/dev/null)
-  echo "$vol" > "$HOME/.timetosleep/saved_volume"
+  echo "$vol" > "$saved"
 }
 
 # Restore volume from saved value

@@ -48,6 +48,7 @@ rm -rf "$STAGE_DIR" "$RW_DMG_PATH" "$DMG_PATH"
 mkdir -p "$STAGE_DIR"
 ditto "$ROOT_DIR/bin/Cat Bedtime.app" "$STAGE_DIR/Cat Bedtime.app"
 ln -s /Applications "$STAGE_DIR/Applications"
+find "$STAGE_DIR" -name .DS_Store -delete
 
 xattr -cr "$STAGE_DIR/Cat Bedtime.app" 2>/dev/null || true
 
@@ -72,11 +73,15 @@ tell application "Finder"
     set current view of container window to icon view
     set toolbar visible of container window to false
     set statusbar visible of container window to false
-    set bounds of container window to {160, 120, 840, 520}
+    try
+      set pathbar visible of container window to false
+    end try
+    set bounds of container window to {160, 120, 760, 480}
     set arrangement of icon view options of container window to not arranged
     set icon size of icon view options of container window to 96
-    set position of item "Cat Bedtime.app" of container window to {200, 190}
-    set position of item "Applications" of container window to {480, 190}
+    set position of item "Cat Bedtime.app" of container window to {190, 170}
+    set position of item "Applications" of container window to {410, 170}
+    update without registering applications
     close
   end tell
 end tell

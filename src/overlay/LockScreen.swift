@@ -3,6 +3,30 @@ import Cocoa
 import CoreText
 import QuartzCore
 
+private enum LockScreenRuntime {
+    static let previewExitOnEsc = CommandLine.arguments.contains("--preview-exit-on-esc")
+    static let previewDurationSeconds: Int = {
+        guard let index = CommandLine.arguments.firstIndex(of: "--preview-duration"),
+              CommandLine.arguments.indices.contains(index + 1),
+              let value = Int(CommandLine.arguments[index + 1]),
+              value > 0 else {
+            return 18
+        }
+        return value
+    }()
+    static let launchDate = Date()
+
+    static var isPreview: Bool {
+        previewExitOnEsc
+    }
+
+    static var previewSecondsRemaining: Int {
+        guard isPreview else { return 0 }
+        let elapsed = Date().timeIntervalSince(launchDate)
+        return max(0, previewDurationSeconds - Int(floor(elapsed)))
+    }
+}
+
 // MARK: - Helpers
 
 private func clamp(_ value: Double, _ lower: Double = 0.0, _ upper: Double = 1.0) -> Double {
@@ -156,6 +180,39 @@ enum CatAnimationAsset {
             return nil
         }
         return URL(fileURLWithPath: path)
+    }
+}
+
+enum OverlayLogoAsset {
+    static func drawTimerIcon(in rect: NSRect) {
+        let stroke = NSColor.white.withAlphaComponent(0.78)
+        let fill = NSColor.white.withAlphaComponent(0.12)
+        let lineWidth: CGFloat = 1.8
+
+        let faceRect = rect.insetBy(dx: 3.5, dy: 4.0)
+        fill.setFill()
+        NSBezierPath(ovalIn: faceRect).fill()
+
+        stroke.setStroke()
+        let face = NSBezierPath(ovalIn: faceRect)
+        face.lineWidth = lineWidth
+        face.stroke()
+
+        let top = NSBezierPath()
+        top.move(to: NSPoint(x: rect.midX - 3.5, y: rect.maxY - 2.5))
+        top.line(to: NSPoint(x: rect.midX + 3.5, y: rect.maxY - 2.5))
+        top.lineWidth = lineWidth
+        top.lineCapStyle = .round
+        top.stroke()
+
+        let hand = NSBezierPath()
+        hand.move(to: NSPoint(x: faceRect.midX, y: faceRect.midY))
+        hand.line(to: NSPoint(x: faceRect.midX, y: faceRect.midY + 5.0))
+        hand.move(to: NSPoint(x: faceRect.midX, y: faceRect.midY))
+        hand.line(to: NSPoint(x: faceRect.midX + 5.0, y: faceRect.midY - 2.5))
+        hand.lineWidth = lineWidth
+        hand.lineCapStyle = .round
+        hand.stroke()
     }
 }
 
@@ -447,6 +504,7 @@ class CatLockScreenView: NSView {
 
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 53 {
+            if LockScreenRuntime.previewExitOnEsc { exit(0) }
             EmergencyExitCoordinator.shared.handleEscapeKey()
             return
         }
@@ -489,7 +547,7 @@ class CatLockScreenView: NSView {
 
         let textAlpha = easeOutQuart(progress(uiTime, start: lightsOutAt + lightsOutDuration + 1.0, duration: 1.2))
         drawLockText(alpha: CGFloat(video == nil ? 1.0 : textAlpha))
-        drawEmergencyHint()
+        drawPreviewCountdown()
     }
 
     private func clearForTransparentWindow() {
@@ -631,19 +689,55 @@ class CatLockScreenView: NSView {
         text.draw(in: NSRect(x: x - glyphMinX, y: y, width: width, height: height))
     }
 
-    private func drawEmergencyHint() {
+    private func drawPreviewCountdown() {
+        guard LockScreenRuntime.isPreview else { return }
+        let seconds = LockScreenRuntime.previewSecondsRemaining
+        let label = "\(seconds)s"
+        let iconSize: CGFloat = 24
+        let horizontalPadding: CGFloat = 12
+        let height: CGFloat = 42
+        let gap: CGFloat = 8
+        let margin: CGFloat = max(24, bounds.width * 0.025)
+        let topInset: CGFloat = max(22, bounds.height * 0.03)
+
         let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = .center
+        paragraph.alignment = .left
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 11, weight: .regular),
-            .foregroundColor: NSColor.white.withAlphaComponent(0.14),
-            .kern: 0.4,
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 15, weight: .medium),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.78),
             .paragraphStyle: paragraph,
         ]
-        NSAttributedString(
-            string: L10n.t("lock.esc_hint"),
-            attributes: attrs
-        ).draw(in: NSRect(x: bounds.minX, y: bounds.minY + 26, width: bounds.width, height: 22))
+        let text = NSAttributedString(string: label, attributes: attrs)
+        let textWidth = ceil(text.size().width)
+        let width = horizontalPadding * 2 + iconSize + gap + textWidth
+        let rect = NSRect(
+            x: bounds.maxX - margin - width,
+            y: bounds.maxY - topInset - height,
+            width: width,
+            height: height
+        )
+
+        fillRounded(rect, radius: 10, color: NSColor.black.withAlphaComponent(0.46))
+        let border = NSBezierPath(roundedRect: rect, xRadius: 10, yRadius: 10)
+        NSColor.white.withAlphaComponent(0.10).setStroke()
+        border.lineWidth = 1
+        border.stroke()
+
+        let iconRect = NSRect(
+            x: rect.minX + horizontalPadding,
+            y: rect.midY - iconSize / 2,
+            width: iconSize,
+            height: iconSize
+        )
+        OverlayLogoAsset.drawTimerIcon(in: iconRect)
+
+        let textRect = NSRect(
+            x: iconRect.maxX + gap,
+            y: rect.midY - 10,
+            width: textWidth + 2,
+            height: 20
+        )
+        text.draw(in: textRect)
     }
 
     private func currentTimeString() -> String {
@@ -687,6 +781,7 @@ class LockAppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.keyCode == 53 {
+                if LockScreenRuntime.previewExitOnEsc { exit(0) }
                 EmergencyExitCoordinator.shared.handleEscapeKey()
             }
             return nil

@@ -53,7 +53,9 @@ CoreDisplay.CoreDisplay_Display_SetUserBrightness(0, $val)
 
 # Save current brightness for later restore
 brightness_save() {
-  brightness_get > "$HOME/.timetosleep/saved_brightness"
+  local saved="$HOME/.timetosleep/saved_brightness"
+  [ -f "$saved" ] && return
+  brightness_get > "$saved"
 }
 
 # Restore saved brightness

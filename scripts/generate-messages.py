@@ -121,12 +121,6 @@ add("lock.missing_asset",
     "Missing cat animation\n~/.timetosleep/assets/cat-bedtime.mov",
     "ねこのアニメ素材がありません\n~/.timetosleep/assets/cat-bedtime.mov",
     "고양이 애니메이션 없음\n~/.timetosleep/assets/cat-bedtime.mov")
-add("lock.esc_hint",
-    "异常时连按两下 ESC：重新校验时间，非锁机时段可退出",
-    "異常時連按兩下 ESC：重新校驗時間，非鎖機時段可退出",
-    "If something's wrong, double-press ESC to re-check time; exit when lock isn't active",
-    "異常時は ESC を2回：時刻を再確認。ロック時間外なら終了できます",
-    "문제가 있으면 ESC 두 번: 시간 재확인. 잠금 시간이 아니면 종료 가능")
 add("notify.winddown.title", "🐾  猫猫开始打哈欠了", "🐾  貓貓開始打哈欠了", "🐾  The cat is getting sleepy", "🐾  ねこがあくびを始めました", "🐾  고양이가 하품하기 시작했어요")
 add("notify.winddown.subtitle", "还有 %d 分钟到关灯", "還有 %d 分鐘到關燈", "%d minutes until lights out", "消灯まであと %d 分", "불 끄기까지 %d분")
 add("notify.winddown.body", "收尾这一小段就好", "收尾這一小段就好", "Just wrap up this bit", "このあたりを片づけましょう", "이 정도만 마무리해요")

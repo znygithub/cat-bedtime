@@ -151,6 +151,9 @@ schedule_install() {
     <integer>${minute}</integer>
   </dict>
 
+  <key>RunAtLoad</key>
+  <true/>
+
   <key>StandardOutPath</key>
   <string>${ZZZ_DIR}/daemon.log</string>
   <key>StandardErrorPath</key>
@@ -174,9 +177,6 @@ PLIST
   launchctl bootout "$gui/$LEGACY_BOOTCHECK_LABEL" 2>/dev/null || true
   rm -f "$LEGACY_BOOTCHECK_PLIST"
   launchctl bootstrap "$gui" "$PLIST_PATH"
-  if _should_kickstart_now; then
-    launchctl kickstart -k "$gui/$AGENT_LABEL" 2>/dev/null || true
-  fi
 }
 
 schedule_uninstall() {

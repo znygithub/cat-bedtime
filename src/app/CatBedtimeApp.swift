@@ -78,6 +78,9 @@ class ConfigManager: ObservableObject {
     private var postponeURL: URL {
         zzzDir.appendingPathComponent("postpone_tonight")
     }
+    private var onboardingInstallURL: URL {
+        zzzDir.appendingPathComponent("onboarding_install_id")
+    }
 
     @Published var config = CatBedtimeConfig.defaultConfig
     @Published var tonightPostponedBedtime: String?
@@ -95,6 +98,10 @@ class ConfigManager: ObservableObject {
 
     var configExists: Bool {
         FileManager.default.fileExists(atPath: configURL.path)
+    }
+
+    var shouldShowDashboardOnLaunch: Bool {
+        configExists && completedOnboardingForCurrentInstall()
     }
 
     func loadConfig() {
@@ -117,10 +124,33 @@ class ConfigManager: ObservableObject {
         config.activated_at = fmt.string(from: Date())
         config.version = "1.0.0"
         saveConfig()
+        markOnboardingCompleteForCurrentInstall()
         initStats()
         installSchedule()
         NotificationScheduler.shared.requestPermission()
         NotificationScheduler.shared.clearPendingReminders()
+    }
+
+    private func currentInstallID() -> String {
+        let bundleURL = Bundle.main.bundleURL
+        let executableURL = Bundle.main.executableURL ?? bundleURL
+        let attrs = (try? FileManager.default.attributesOfItem(atPath: executableURL.path)) ?? [:]
+        let modified = attrs[.modificationDate] as? Date ?? Date.distantPast
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
+        return "\(bundleURL.path)|\(version)|\(Int(modified.timeIntervalSince1970))"
+    }
+
+    private func completedOnboardingForCurrentInstall() -> Bool {
+        guard let data = try? Data(contentsOf: onboardingInstallURL),
+              let saved = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return false
+        }
+        return saved == currentInstallID()
+    }
+
+    private func markOnboardingCompleteForCurrentInstall() {
+        ensureDir()
+        try? "\(currentInstallID())\n".write(to: onboardingInstallURL, atomically: true, encoding: .utf8)
     }
 
     func updateConfigAndReschedule() {
@@ -257,6 +287,9 @@ class ConfigManager: ObservableObject {
             <integer>\(minute)</integer>
           </dict>
 
+          <key>RunAtLoad</key>
+          <true/>
+
           <key>StandardOutPath</key>
           <string>\(logPath)</string>
           <key>StandardErrorPath</key>
@@ -285,9 +318,6 @@ class ConfigManager: ObservableObject {
         try? FileManager.default.removeItem(atPath: legacyPlist)
         // bootstrap new
         shellRun("/bin/launchctl", ["bootstrap", gui, plistPath])
-        if shouldKickstartDaemonNow(bedtime: scheduleBedtime) {
-            shellRun("/bin/launchctl", ["kickstart", "-k", "\(gui)/\(agentLabel)"])
-        }
     }
 
     // MARK: Helpers
@@ -636,8 +666,12 @@ struct DayToggle: View {
         Button(action: action) {
             Text(label)
                 .font(Lamp.rounded(compact ? 11 : 12, weight: .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(compact ? 0.65 : 0.72)
+                .allowsTightening(true)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, compact ? 7 : 10)
+                .padding(.horizontal, compact ? 2 : 5)
+                .frame(height: compact ? 30 : 42)
                 .background(isOn ? Lamp.amberMoon : Lamp.glass1)
                 .foregroundColor(isOn ? Lamp.nightDeep : Lamp.duskDim)
                 .cornerRadius(6)
@@ -695,12 +729,17 @@ struct DayGrid: View {
     @Binding var activeDays: Set<String>
     var compact: Bool = false
 
+    private var usesShortLabels: Bool {
+        compact || L10n.currentLanguage == "en"
+    }
+
     var body: some View {
         HStack(spacing: compact ? 4 : 6) {
             ForEach(dayKeys, id: \.self) { key in
                 let idx = Int(key) ?? 1
+                let fullLabel = L10n.dayFull(idx)
                 DayToggle(
-                    label: compact ? L10n.dayShort(idx) : L10n.dayFull(idx),
+                    label: usesShortLabels ? L10n.dayShort(idx) : fullLabel,
                     isOn: activeDays.contains(key),
                     compact: compact
                 ) {
@@ -710,8 +749,10 @@ struct DayGrid: View {
                         activeDays.insert(key)
                     }
                 }
+                .accessibilityLabel(Text(fullLabel))
             }
         }
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -827,7 +868,7 @@ struct ScheduleConfigView: View {
                     .foregroundColor(Lamp.creamText)
                     .padding(.bottom, 8)
                 DayGrid(activeDays: $activeDays)
-                    .frame(maxWidth: 300)
+                    .frame(maxWidth: .infinity)
             }
 
             Spacer()
@@ -994,7 +1035,10 @@ struct LockPreviewView: View {
     @EnvironmentObject var state: AppState
     let catImage: NSImage?
 
+    private let previewDurationSeconds = 18
+
     @State private var overlayProcess: Process?
+    @State private var didAdvance = false
 
     var body: some View {
         ZStack {
@@ -1042,26 +1086,34 @@ struct LockPreviewView: View {
 
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: path)
+        proc.arguments = ["--preview-exit-on-esc", "--preview-duration", "\(previewDurationSeconds)"]
         proc.standardOutput = FileHandle.nullDevice
         proc.standardError = FileHandle.nullDevice
+        proc.terminationHandler = { _ in
+            DispatchQueue.main.async {
+                advanceToDashboard()
+            }
+        }
         try? proc.run()
         overlayProcess = proc
 
-        // Kill after 5 seconds and advance
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            killOverlay()
+        DispatchQueue.main.asyncAfter(deadline: .now() + TimeInterval(previewDurationSeconds)) {
             advanceToDashboard()
         }
     }
 
     private func killOverlay() {
-        if let proc = overlayProcess, proc.isRunning {
+        guard let proc = overlayProcess else { return }
+        proc.terminationHandler = nil
+        if proc.isRunning {
             proc.terminate()
         }
         overlayProcess = nil
     }
 
     private func advanceToDashboard() {
+        guard !didAdvance else { return }
+        didAdvance = true
         killOverlay()
         state.screen = .dashboard
         resizeWindow(width: 520, height: 600)
@@ -1544,6 +1596,8 @@ struct ContentView: View {
                 activeDays = Set(mgr.config.days)
                 bedtime = parseTime(mgr.config.bedtime)
                 wakeup = parseTime(mgr.config.wakeup)
+            }
+            if mgr.shouldShowDashboardOnLaunch {
                 state.screen = .dashboard
             }
         }
@@ -1627,10 +1681,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         NotificationScheduler.shared.requestPermission()
 
         let mgr = ConfigManager.shared
-        if mgr.configExists {
+        if mgr.shouldShowDashboardOnLaunch {
             NotificationScheduler.shared.clearPendingReminders()
         }
-        let isDashboard = mgr.configExists
+        let isDashboard = mgr.shouldShowDashboardOnLaunch
         let initialWidth: CGFloat = isDashboard ? 520 : 420
         let initialHeight: CGFloat = isDashboard ? 600 : 560
         WindowSizeStore.shared.size = CGSize(width: initialWidth, height: initialHeight)
