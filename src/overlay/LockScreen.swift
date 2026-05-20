@@ -128,6 +128,16 @@ enum LockWindowMath {
     }
 }
 
+// MARK: - Cat video playback
+
+/// Breathing loop: intro plays forward once, then ping-pong [loopStart … end] until unlock.
+enum CatVideoPlayback {
+    /// 12分20秒 on the source timeline → 0:12.20 for this clip.
+    static let breathingLoopStart: Double = 12.20
+    static let endEpsilon: Double = 0.04
+    static let boundaryEpsilon: Double = 0.06
+}
+
 // MARK: - Cat video asset
 
 enum CatAnimationAsset {
@@ -153,14 +163,22 @@ private final class VideoFrameSource {
     private let player: AVPlayer
     private let output: AVPlayerItemVideoOutput
     private let durationSeconds: Double?
+    private let loopStart: Double
+    private let loopEnd: Double
     private var lastPixelBuffer: CVPixelBuffer?
-    private var seekInFlight = false
-    private var lastRequestedSync: Double = -1
+    private var breathingMode = false
+    private var playingForward = true
+    private var timeObserver: Any?
 
     init(url: URL) {
         let asset = AVURLAsset(url: url)
         let duration = CMTimeGetSeconds(asset.duration)
         durationSeconds = duration.isFinite && duration > 0 ? duration : nil
+
+        let rawDuration = durationSeconds ?? 0
+        let configuredStart = CatVideoPlayback.breathingLoopStart
+        loopStart = min(max(0, configuredStart), max(0, rawDuration - 0.15))
+        loopEnd = max(loopStart + 0.10, rawDuration - CatVideoPlayback.endEpsilon)
 
         let item = AVPlayerItem(asset: asset)
         output = AVPlayerItemVideoOutput(pixelBufferAttributes: [
@@ -170,34 +188,18 @@ private final class VideoFrameSource {
         player = AVPlayer(playerItem: item)
         player.isMuted = true
         player.actionAtItemEnd = .pause
+        player.playImmediately(atRate: 1.0)
+        installBreathingLoopObserver()
+    }
+
+    deinit {
+        if let timeObserver {
+            player.removeTimeObserver(timeObserver)
+        }
     }
 
     var duration: Double? {
         durationSeconds
-    }
-
-    func sync(to timelineTime: Double) {
-        let target = boundedVideoTime(timelineTime)
-        lastRequestedSync = target
-
-        if target <= 0.05 {
-            seekInFlight = false
-            player.playImmediately(atRate: 1.0)
-            return
-        }
-
-        seekInFlight = true
-        player.pause()
-        player.seek(to: mediaTime(target), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
-            guard let self = self else { return }
-            self.seekInFlight = false
-            guard finished else { return }
-            if self.shouldKeepPlaying(at: target) {
-                self.player.playImmediately(atRate: 1.0)
-            } else {
-                self.player.pause()
-            }
-        }
     }
 
     var currentTime: Double {
@@ -205,16 +207,7 @@ private final class VideoFrameSource {
         return seconds.isFinite ? seconds : 0
     }
 
-    func currentPixelBuffer(for timelineTime: Double) -> CVPixelBuffer? {
-        let desired = boundedVideoTime(timelineTime)
-        let actual = currentTime
-        if desired > 0.25, abs(actual - desired) > 0.75 {
-            if !seekInFlight, abs(desired - lastRequestedSync) > 0.50 {
-                sync(to: desired)
-            }
-            return lastPixelBuffer
-        }
-
+    func currentPixelBuffer() -> CVPixelBuffer? {
         let itemTime = player.currentTime()
         if let pixelBuffer = output.copyPixelBuffer(forItemTime: itemTime, itemTimeForDisplay: nil) {
             lastPixelBuffer = pixelBuffer
@@ -223,19 +216,47 @@ private final class VideoFrameSource {
         return lastPixelBuffer
     }
 
-    private func boundedVideoTime(_ time: Double) -> Double {
-        let safeTime = max(0, time)
-        guard let duration = durationSeconds, duration.isFinite, duration > 0 else {
-            return safeTime
+    private func installBreathingLoopObserver() {
+        let interval = CMTime(seconds: 1.0 / 30.0, preferredTimescale: 600)
+        timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            self?.updateBreathingLoop(at: time.seconds)
         }
-        return min(safeTime, max(0, duration - 0.04))
     }
 
-    private func shouldKeepPlaying(at time: Double) -> Bool {
-        guard let duration = durationSeconds, duration.isFinite, duration > 0 else {
-            return true
+    private func updateBreathingLoop(at rawTime: Double) {
+        guard rawTime.isFinite else { return }
+        let epsilon = CatVideoPlayback.boundaryEpsilon
+
+        if !breathingMode {
+            if rawTime >= loopStart - epsilon {
+                breathingMode = true
+                playingForward = true
+                if rawTime >= loopEnd - epsilon {
+                    playingForward = false
+                    seekToLoopBoundary(loopEnd, rate: -1.0)
+                }
+            }
+            return
         }
-        return time < max(0, duration - 0.10)
+
+        if playingForward {
+            if rawTime >= loopEnd - epsilon {
+                playingForward = false
+                seekToLoopBoundary(loopEnd, rate: -1.0)
+            }
+        } else if rawTime <= loopStart + epsilon {
+            playingForward = true
+            seekToLoopBoundary(loopStart, rate: 1.0)
+        }
+    }
+
+    private func seekToLoopBoundary(_ seconds: Double, rate: Float) {
+        let clamped = min(max(seconds, loopStart), loopEnd)
+        player.pause()
+        player.seek(to: mediaTime(clamped), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+            guard let self, finished else { return }
+            self.player.playImmediately(atRate: rate)
+        }
     }
 
     private func mediaTime(_ seconds: Double) -> CMTime {
@@ -288,11 +309,9 @@ private final class LockAnimationTimeline {
         max(0, CACurrentMediaTime() - startedAt)
     }
 
-    func displayTime(videoDuration: Double?) -> Double {
-        guard let duration = videoDuration, duration.isFinite, duration > 0 else {
-            return elapsed
-        }
-        return min(elapsed, max(0, duration - 0.04))
+    /// Wall-clock time for lock UI overlays (lights out, text fade-in).
+    func uiTime() -> Double {
+        elapsed
     }
 }
 
@@ -390,10 +409,10 @@ class CatLockScreenView: NSView {
     private var displayTimer: Timer?
     private var lastFrame: CGImage?
 
-    private let assetScale: CGFloat = 0.80
+    private let assetScale: CGFloat = 0.99
     private let assetCenterX: CGFloat = 0.50
     private let assetBottom: CGFloat = 0.02
-    private let lightsOutAt: Double = 4.0
+    private let lightsOutAt: Double = 7.0
     private let lightsOutDuration: Double = 0.38
 
     init(frame: NSRect, config: SleepConfig) {
@@ -405,7 +424,6 @@ class CatLockScreenView: NSView {
         layer?.isOpaque = false
         layer?.backgroundColor = NSColor.clear.cgColor
         startDisplayTimer()
-        video?.sync(to: LockAnimationTimeline.shared.elapsed)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -445,20 +463,20 @@ class CatLockScreenView: NSView {
             clearForTransparentWindow()
         }
 
-        let time = LockAnimationTimeline.shared.displayTime(videoDuration: video?.duration)
+        let uiTime = LockAnimationTimeline.shared.uiTime()
 
         if video == nil {
             drawNightBackground()
         }
-        drawLightsOutOverlay(time: time)
+        drawLightsOutOverlay(time: uiTime)
 
         if video == nil {
             drawMissingAssetCard()
         } else {
-            drawCatVideo(at: time)
+            drawCatVideo()
         }
 
-        let textAlpha = easeOutQuart(progress(time, start: lightsOutAt + lightsOutDuration + 1.0, duration: 1.2))
+        let textAlpha = easeOutQuart(progress(uiTime, start: lightsOutAt + lightsOutDuration + 1.0, duration: 1.2))
         drawLockText(alpha: CGFloat(video == nil ? 1.0 : textAlpha))
         drawEmergencyHint()
     }
@@ -488,8 +506,8 @@ class CatLockScreenView: NSView {
         fillRect(bounds, color: NSColor.black.withAlphaComponent(alpha))
     }
 
-    private func drawCatVideo(at time: Double) {
-        guard let pixelBuffer = video?.currentPixelBuffer(for: time) else { return }
+    private func drawCatVideo() {
+        guard let pixelBuffer = video?.currentPixelBuffer() else { return }
         if let image = renderer.alphaImage(from: pixelBuffer) {
             lastFrame = image
         }
