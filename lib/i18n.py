@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import json
 import os
+import plistlib
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -41,39 +43,97 @@ def _load_catalog() -> dict[str, Any]:
     raise FileNotFoundError("messages.json not found in locales/")
 
 
-def resolve_lang() -> str:
-    """Pick best supported language from macOS / Unix locale env."""
-    candidates: list[str] = []
+def _normalize_tag(tag: str) -> str:
+    return tag.strip().replace("_", "-")
+
+
+def _match_supported(tag: str) -> str | None:
+    """Map a BCP-47 tag to a supported catalog language (mirrors L10n.swift)."""
+    norm = _normalize_tag(tag).lower()
+    if norm.startswith("zh-hant") or norm in ("zh-tw", "zh-hk", "zh-mo"):
+        return "zh-Hant"
+    if norm.startswith("zh-hans") or norm in ("zh-cn", "zh-sg"):
+        return "zh-Hans"
+    if norm == "zh" or norm.startswith("zh-"):
+        return "zh-Hans"
+    if norm.startswith("ja"):
+        return "ja"
+    if norm.startswith("ko"):
+        return "ko"
+    if norm.startswith("en"):
+        return "en"
+    return None
+
+
+def _macos_preferred_language_tags() -> list[str]:
+    """Read macOS UI language list (same source as Locale.preferredLanguages)."""
+    tags: list[str] = []
+    prefs = Path.home() / "Library/Preferences/.GlobalPreferences.plist"
+    if prefs.is_file():
+        try:
+            with prefs.open("rb") as fh:
+                data = plistlib.load(fh)
+            langs = data.get("AppleLanguages")
+            if isinstance(langs, list):
+                tags.extend(_normalize_tag(str(item)) for item in langs if str(item).strip())
+        except (OSError, plistlib.InvalidFileException, TypeError, ValueError):
+            pass
+
+    if tags:
+        return tags
+
+    try:
+        out = subprocess.check_output(
+            ["defaults", "read", "-g", "AppleLanguages"],
+            text=True,
+            timeout=2,
+            stderr=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return tags
+
+    for line in out.splitlines():
+        line = line.strip().strip(",").strip('"').strip()
+        if line and line not in ("(", ")"):
+            tags.append(_normalize_tag(line))
+    return tags
+
+
+def _preferred_language_tags() -> list[str]:
+    """Ordered language candidates — system UI first, then Unix locale env."""
+    tags: list[str] = []
+    seen: set[str] = set()
+
+    def add(raw: str) -> None:
+        tag = _normalize_tag(raw)
+        if not tag or tag in seen:
+            return
+        seen.add(tag)
+        tags.append(tag)
+
+    for tag in _macos_preferred_language_tags():
+        add(tag)
+
+    raw = os.environ.get("AppleLanguages", "").strip()
+    if raw:
+        for part in raw.replace(",", " ").split():
+            add(part)
+
     for key in ("LC_ALL", "LC_MESSAGES", "LANG"):
         raw = os.environ.get(key, "").strip()
         if not raw or raw == "C":
             continue
-        tag = raw.split(".")[0].replace("_", "-")
-        candidates.append(tag)
+        add(raw.split(".")[0])
 
-    # macOS preferred languages (when launched from GUI / app bundle)
-    for key in ("AppleLanguages",):
-        raw = os.environ.get(key, "").strip()
-        if raw:
-            for part in raw.replace(",", " ").split():
-                candidates.append(part.replace("_", "-"))
+    return tags
 
-    for tag in candidates:
-        norm = tag.lower()
-        if norm.startswith("zh-hant") or norm in ("zh-tw", "zh-hk", "zh-mo"):
-            return "zh-Hant"
-        if norm.startswith("zh-hans") or norm in ("zh-cn", "zh-sg"):
-            return "zh-Hans"
-        if norm == "zh" or norm.startswith("zh-"):
-            # generic zh → simplified
-            return "zh-Hans"
-        if norm.startswith("ja"):
-            return "ja"
-        if norm.startswith("ko"):
-            return "ko"
-        if norm.startswith("en"):
-            return "en"
 
+def resolve_lang() -> str:
+    """Pick best supported language — aligned with Swift L10n / system UI."""
+    for tag in _preferred_language_tags():
+        matched = _match_supported(tag)
+        if matched:
+            return matched
     return DEFAULT_LANG
 
 

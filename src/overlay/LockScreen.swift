@@ -54,6 +54,19 @@ struct SleepConfig {
             }
         }
 
+        let postponePath = NSHomeDirectory() + "/.timetosleep/postpone_tonight"
+        if let content = try? String(contentsOf: URL(fileURLWithPath: postponePath), encoding: .utf8) {
+            let lines = content.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+            if lines.count >= 2 {
+                let fmt = DateFormatter()
+                fmt.dateFormat = "yyyy-MM-dd"
+                let today = fmt.string(from: Date())
+                if lines[0] == today, !lines[1].isEmpty {
+                    bedtime = lines[1]
+                }
+            }
+        }
+
         return SleepConfig(wakeupTime: wakeup, bedtime: bedtime, activeDays: days)
     }
 }
@@ -139,10 +152,17 @@ enum CatAnimationAsset {
 private final class VideoFrameSource {
     private let player: AVPlayer
     private let output: AVPlayerItemVideoOutput
+    private let durationSeconds: Double?
     private var lastPixelBuffer: CVPixelBuffer?
+    private var seekInFlight = false
+    private var lastRequestedSync: Double = -1
 
     init(url: URL) {
-        let item = AVPlayerItem(url: url)
+        let asset = AVURLAsset(url: url)
+        let duration = CMTimeGetSeconds(asset.duration)
+        durationSeconds = duration.isFinite && duration > 0 ? duration : nil
+
+        let item = AVPlayerItem(asset: asset)
         output = AVPlayerItemVideoOutput(pixelBufferAttributes: [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
         ])
@@ -152,8 +172,32 @@ private final class VideoFrameSource {
         player.actionAtItemEnd = .pause
     }
 
-    func play() {
-        player.playImmediately(atRate: 1.0)
+    var duration: Double? {
+        durationSeconds
+    }
+
+    func sync(to timelineTime: Double) {
+        let target = boundedVideoTime(timelineTime)
+        lastRequestedSync = target
+
+        if target <= 0.05 {
+            seekInFlight = false
+            player.playImmediately(atRate: 1.0)
+            return
+        }
+
+        seekInFlight = true
+        player.pause()
+        player.seek(to: mediaTime(target), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+            guard let self = self else { return }
+            self.seekInFlight = false
+            guard finished else { return }
+            if self.shouldKeepPlaying(at: target) {
+                self.player.playImmediately(atRate: 1.0)
+            } else {
+                self.player.pause()
+            }
+        }
     }
 
     var currentTime: Double {
@@ -161,13 +205,41 @@ private final class VideoFrameSource {
         return seconds.isFinite ? seconds : 0
     }
 
-    func currentPixelBuffer() -> CVPixelBuffer? {
+    func currentPixelBuffer(for timelineTime: Double) -> CVPixelBuffer? {
+        let desired = boundedVideoTime(timelineTime)
+        let actual = currentTime
+        if desired > 0.25, abs(actual - desired) > 0.75 {
+            if !seekInFlight, abs(desired - lastRequestedSync) > 0.50 {
+                sync(to: desired)
+            }
+            return lastPixelBuffer
+        }
+
         let itemTime = player.currentTime()
         if let pixelBuffer = output.copyPixelBuffer(forItemTime: itemTime, itemTimeForDisplay: nil) {
             lastPixelBuffer = pixelBuffer
             return pixelBuffer
         }
         return lastPixelBuffer
+    }
+
+    private func boundedVideoTime(_ time: Double) -> Double {
+        let safeTime = max(0, time)
+        guard let duration = durationSeconds, duration.isFinite, duration > 0 else {
+            return safeTime
+        }
+        return min(safeTime, max(0, duration - 0.04))
+    }
+
+    private func shouldKeepPlaying(at time: Double) -> Bool {
+        guard let duration = durationSeconds, duration.isFinite, duration > 0 else {
+            return true
+        }
+        return time < max(0, duration - 0.10)
+    }
+
+    private func mediaTime(_ seconds: Double) -> CMTime {
+        CMTime(seconds: seconds, preferredTimescale: 600)
     }
 }
 
@@ -204,6 +276,23 @@ private final class VideoRenderer {
                        decode: nil,
                        shouldInterpolate: true,
                        intent: .defaultIntent)
+    }
+}
+
+private final class LockAnimationTimeline {
+    static let shared = LockAnimationTimeline()
+
+    private let startedAt = CACurrentMediaTime()
+
+    var elapsed: Double {
+        max(0, CACurrentMediaTime() - startedAt)
+    }
+
+    func displayTime(videoDuration: Double?) -> Double {
+        guard let duration = videoDuration, duration.isFinite, duration > 0 else {
+            return elapsed
+        }
+        return min(elapsed, max(0, duration - 0.04))
     }
 }
 
@@ -300,7 +389,6 @@ class CatLockScreenView: NSView {
     private let renderer = VideoRenderer()
     private var displayTimer: Timer?
     private var lastFrame: CGImage?
-    private var startTime = CACurrentMediaTime()
 
     private let assetScale: CGFloat = 0.80
     private let assetCenterX: CGFloat = 0.50
@@ -317,7 +405,7 @@ class CatLockScreenView: NSView {
         layer?.isOpaque = false
         layer?.backgroundColor = NSColor.clear.cgColor
         startDisplayTimer()
-        video?.play()
+        video?.sync(to: LockAnimationTimeline.shared.elapsed)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -345,7 +433,7 @@ class CatLockScreenView: NSView {
     }
 
     private var elapsed: Double {
-        CACurrentMediaTime() - startTime
+        LockAnimationTimeline.shared.elapsed
     }
 
     override var isOpaque: Bool { false }
@@ -357,7 +445,7 @@ class CatLockScreenView: NSView {
             clearForTransparentWindow()
         }
 
-        let time = video?.currentTime ?? elapsed
+        let time = LockAnimationTimeline.shared.displayTime(videoDuration: video?.duration)
 
         if video == nil {
             drawNightBackground()
@@ -367,7 +455,7 @@ class CatLockScreenView: NSView {
         if video == nil {
             drawMissingAssetCard()
         } else {
-            drawCatVideo()
+            drawCatVideo(at: time)
         }
 
         let textAlpha = easeOutQuart(progress(time, start: lightsOutAt + lightsOutDuration + 1.0, duration: 1.2))
@@ -400,8 +488,8 @@ class CatLockScreenView: NSView {
         fillRect(bounds, color: NSColor.black.withAlphaComponent(alpha))
     }
 
-    private func drawCatVideo() {
-        guard let pixelBuffer = video?.currentPixelBuffer() else { return }
+    private func drawCatVideo(at time: Double) {
+        guard let pixelBuffer = video?.currentPixelBuffer(for: time) else { return }
         if let image = renderer.alphaImage(from: pixelBuffer) {
             lastFrame = image
         }

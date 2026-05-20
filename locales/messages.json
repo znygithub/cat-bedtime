@@ -415,11 +415,11 @@
       "ko": "직접 입력"
     },
     "delay.postpone": {
-      "zh-Hans": "推迟",
-      "zh-Hant": "推遲",
-      "en": "Delay",
-      "ja": "延期",
-      "ko": "연기"
+      "zh-Hans": "晚点再来",
+      "zh-Hant": "晚點再來",
+      "en": "Come later",
+      "ja": "遅らせる",
+      "ko": "늦게 부르기"
     },
     "delay.minutes": {
       "zh-Hans": "分钟",
@@ -443,11 +443,53 @@
       "ko": "고양이에게 알리기"
     },
     "delay.default_reason": {
-      "zh-Hans": "推迟%d分钟",
-      "zh-Hant": "推遲%d分鐘",
-      "en": "Delayed %d minutes",
-      "ja": "%d 分延期",
-      "ko": "%d분 연기"
+      "zh-Hans": "猫猫晚%d分钟来",
+      "zh-Hant": "貓貓晚%d分鐘來",
+      "en": "Cat comes %d min later",
+      "ja": "ねこが%d分遅れ",
+      "ko": "고양이 %d분 늦게"
+    },
+    "delay.confirmed": {
+      "zh-Hans": "猫猫已知晓！今晚最新睡眠时间 %@",
+      "zh-Hant": "貓貓已知曉！今晚最新睡眠時間 %@",
+      "en": "The cat got it! Latest sleep time tonight: %@",
+      "ja": "ねこ、わかった！今夜の最新就寝時間は %@",
+      "ko": "고양이가 알았어요! 오늘 밤 최신 취침 시간 %@"
+    },
+    "dashboard.tonight_postponed": {
+      "zh-Hans": "今晚最新睡眠时间：%@",
+      "zh-Hant": "今晚最新睡眠時間：%@",
+      "en": "Latest sleep time tonight: %@",
+      "ja": "今夜の最新就寝時間：%@",
+      "ko": "오늘 밤 최신 취침 시간: %@"
+    },
+    "dashboard.original_bedtime": {
+      "zh-Hans": "原定 %@",
+      "zh-Hant": "原定 %@",
+      "en": "Originally %@",
+      "ja": "元は %@",
+      "ko": "원래 %@"
+    },
+    "notify.delay.title": {
+      "zh-Hans": "🐾 猫猫知道了",
+      "zh-Hant": "🐾 貓貓知道了",
+      "en": "🐾 The cat got your message",
+      "ja": "🐾 ねこ、わかった",
+      "ko": "🐾 고양이가 알았어요"
+    },
+    "notify.delay.subtitle": {
+      "zh-Hans": "今晚 %@ 睡觉",
+      "zh-Hant": "今晚 %@ 睡覺",
+      "en": "Sleep time tonight: %@",
+      "ja": "今夜 %@ 就寝",
+      "ko": "오늘 밤 %@ 취침"
+    },
+    "notify.delay.body": {
+      "zh-Hans": "到点它还会准时来的",
+      "zh-Hant": "到點牠還會準時來的",
+      "en": "It'll still come on time",
+      "ja": "時間になったら来ます",
+      "ko": "시간이 되면 제때 올 거예요"
     },
     "quit.title": {
       "zh-Hans": "确定要退出猫猫困了吗？",
@@ -457,11 +499,11 @@
       "ko": "Cat Bedtime를 종료할까요?"
     },
     "quit.message": {
-      "zh-Hans": "退出只会关闭设置窗口\n睡眠时间和后台定时任务会继续保留，到点仍会锁屏",
-      "zh-Hant": "退出只會關閉設定視窗\n睡眠時間和背景定時任務會繼續保留，到點仍會鎖屏",
-      "en": "Only the settings window closes.\nYour schedule and background tasks keep running — lock screen still activates on time.",
-      "ja": "設定ウィンドウだけが閉じます。\nスケジュールとバックグラウンド処理は続き、時間になるとロックされます。",
-      "ko": "설정 창만 닫힙니다.\n일정과 백그라운드 작업은 계속되며, 시간이 되면 잠금 화면이 켜집니다."
+      "zh-Hans": "退出会关闭设置 App\n但不会取消睡眠时间和后台定时任务，到点仍会锁屏",
+      "zh-Hant": "退出會關閉設定 App\n但不會取消睡眠時間和背景定時任務，到點仍會鎖屏",
+      "en": "This quits the settings app.\nYour schedule and background task stay active, so lock screen still starts on time.",
+      "ja": "設定アプリを終了します。\nスケジュールとバックグラウンド処理は残り、時間になるとロックされます。",
+      "ko": "설정 앱이 종료됩니다.\n일정과 백그라운드 작업은 유지되며, 시간이 되면 잠금 화면이 켜집니다."
     },
     "quit.confirm": {
       "zh-Hans": "退出",
@@ -483,6 +525,27 @@
       "en": "Quit Cat Bedtime",
       "ja": "Cat Bedtime を終了",
       "ko": "Cat Bedtime 종료"
+    },
+    "menu.file": {
+      "zh-Hans": "文件",
+      "zh-Hant": "檔案",
+      "en": "File",
+      "ja": "ファイル",
+      "ko": "파일"
+    },
+    "menu.close_window": {
+      "zh-Hans": "关闭窗口",
+      "zh-Hant": "關閉視窗",
+      "en": "Close Window",
+      "ja": "ウィンドウを閉じる",
+      "ko": "윈도우 닫기"
+    },
+    "menu.hide_window": {
+      "zh-Hans": "收起窗口",
+      "zh-Hant": "收起視窗",
+      "en": "Hide Window",
+      "ja": "ウィンドウを隠す",
+      "ko": "윈도우 숨기기"
     },
     "lock.quote": {
       "zh-Hans": "嘘，猫猫睡了，安静",
@@ -644,6 +707,13 @@
       "en": "Cat sleeps at %s tonight",
       "ja": "今夜のねこの就寝は %s",
       "ko": "오늘 밤 고양이 취침 %s"
+    },
+    "cli.tonight.postponed": {
+      "zh-Hans": "（已推迟，原定 %s）",
+      "zh-Hant": "（已推遲，原定 %s）",
+      "en": "(postponed from %s)",
+      "ja": "（%s から延期）",
+      "ko": "(%s에서 연기)"
     },
     "cli.tonight.until": {
       "zh-Hans": "离猫猫睡觉还有 %s",

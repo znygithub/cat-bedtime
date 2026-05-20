@@ -49,6 +49,8 @@ mkdir -p "$STAGE_DIR"
 ditto "$ROOT_DIR/bin/Cat Bedtime.app" "$STAGE_DIR/Cat Bedtime.app"
 ln -s /Applications "$STAGE_DIR/Applications"
 
+xattr -cr "$STAGE_DIR/Cat Bedtime.app" 2>/dev/null || true
+
 codesign --verify --deep --strict --verbose=2 "$STAGE_DIR/Cat Bedtime.app"
 codesign --verify --verbose=2 "$STAGE_DIR/Cat Bedtime.app/Contents/Resources/bin/zzz-overlay"
 

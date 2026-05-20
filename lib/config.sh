@@ -129,3 +129,26 @@ is_active_today() {
   days=$(config_get_array "days")
   echo "$days" | grep -q "^${today}$"
 }
+
+# Tonight's postponed bedtime (if valid for today), else empty.
+postpone_tonight_bedtime() {
+  local f="$ZZZ_DIR/postpone_tonight"
+  [ -f "$f" ] || return 1
+  local pdate pbed today
+  today=$(date +%Y-%m-%d)
+  pdate=$(head -n 1 "$f" 2>/dev/null || true)
+  pbed=$(sed -n '2p' "$f" 2>/dev/null || true)
+  if [ "$pdate" = "$today" ] && [ -n "$pbed" ]; then
+    echo "$pbed"
+    return 0
+  fi
+  if [ -n "$pdate" ] && [ "$pdate" != "$today" ]; then
+    rm -f "$f"
+  fi
+  return 1
+}
+
+# Config bedtime, or tonight's postponed time when set.
+effective_bedtime() {
+  postpone_tonight_bedtime || config_get "bedtime"
+}

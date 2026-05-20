@@ -92,16 +92,25 @@ add("delay.minutes", "分钟", "分鐘", "min", "分", "분")
 add("delay.cancel", "取消", "取消", "Cancel", "キャンセル", "취소")
 add("delay.submit", "告知猫猫", "告知貓貓", "Tell the cat", "ねこに伝える", "고양이에게 알리기")
 add("delay.default_reason", "猫猫晚%d分钟来", "貓貓晚%d分鐘來", "Cat comes %d min later", "ねこが%d分遅れ", "고양이 %d분 늦게")
+add("delay.confirmed", "猫猫已知晓！今晚最新睡眠时间 %@", "貓貓已知曉！今晚最新睡眠時間 %@", "The cat got it! Latest sleep time tonight: %@", "ねこ、わかった！今夜の最新就寝時間は %@", "고양이가 알았어요! 오늘 밤 최신 취침 시간 %@")
+add("dashboard.tonight_postponed", "今晚最新睡眠时间：%@", "今晚最新睡眠時間：%@", "Latest sleep time tonight: %@", "今夜の最新就寝時間：%@", "오늘 밤 최신 취침 시간: %@")
+add("dashboard.original_bedtime", "原定 %@", "原定 %@", "Originally %@", "元は %@", "원래 %@")
+add("notify.delay.title", "🐾 猫猫知道了", "🐾 貓貓知道了", "🐾 The cat got your message", "🐾 ねこ、わかった", "🐾 고양이가 알았어요")
+add("notify.delay.subtitle", "今晚 %@ 睡觉", "今晚 %@ 睡覺", "Sleep time tonight: %@", "今夜 %@ 就寝", "오늘 밤 %@ 취침")
+add("notify.delay.body", "到点它还会准时来的", "到點牠還會準時來的", "It'll still come on time", "時間になったら来ます", "시간이 되면 제때 올 거예요")
 add("quit.title", "确定要退出猫猫困了吗？", "確定要退出貓貓困了嗎？", "Quit Cat Bedtime?", "Cat Bedtime を終了しますか？", "Cat Bedtime를 종료할까요?")
 add("quit.message",
-    "退出只会关闭设置窗口\n睡眠时间和后台定时任务会继续保留，到点仍会锁屏",
-    "退出只會關閉設定視窗\n睡眠時間和背景定時任務會繼續保留，到點仍會鎖屏",
-    "Only the settings window closes.\nYour schedule and background tasks keep running — lock screen still activates on time.",
-    "設定ウィンドウだけが閉じます。\nスケジュールとバックグラウンド処理は続き、時間になるとロックされます。",
-    "설정 창만 닫힙니다.\n일정과 백그라운드 작업은 계속되며, 시간이 되면 잠금 화면이 켜집니다.")
+    "退出会关闭设置 App\n但不会取消睡眠时间和后台定时任务，到点仍会锁屏",
+    "退出會關閉設定 App\n但不會取消睡眠時間和背景定時任務，到點仍會鎖屏",
+    "This quits the settings app.\nYour schedule and background task stay active, so lock screen still starts on time.",
+    "設定アプリを終了します。\nスケジュールとバックグラウンド処理は残り、時間になるとロックされます。",
+    "설정 앱이 종료됩니다.\n일정과 백그라운드 작업은 유지되며, 시간이 되면 잠금 화면이 켜집니다.")
 add("quit.confirm", "退出", "退出", "Quit", "終了", "종료")
 add("quit.cancel", "取消", "取消", "Cancel", "キャンセル", "취소")
 add("menu.quit", "退出猫猫困了", "退出貓貓困了", "Quit Cat Bedtime", "Cat Bedtime を終了", "Cat Bedtime 종료")
+add("menu.file", "文件", "檔案", "File", "ファイル", "파일")
+add("menu.close_window", "关闭窗口", "關閉視窗", "Close Window", "ウィンドウを閉じる", "윈도우 닫기")
+add("menu.hide_window", "收起窗口", "收起視窗", "Hide Window", "ウィンドウを隠す", "윈도우 숨기기")
 add("lock.quote", "嘘，猫猫睡了，安静", "噓，貓貓睡了，安靜", "Shh — the cat is asleep. Quiet, please.", "しっ、ねこが寝てる。静かに", "쉿, 고양이가 자고 있어요. 조용히")
 add("lock.countdown_hours", "还有 %d 小时 %d 分钟醒来", "還有 %d 小時 %d 分鐘醒來", "Wakes in %d h %d min", "あと %d 時間 %d 分で起きる", "%d시간 %d분 후에 일어나요")
 add("lock.countdown_minutes", "还有 %d 分钟醒来", "還有 %d 分鐘醒來", "Wakes in %d min", "あと %d 分で起きる", "%d분 후에 일어나요")
@@ -139,6 +148,7 @@ cli_keys = [
     ("cli.skipped.note", "它已经收到你的留言了", "牠已經收到你的留言了", "It got your message", "あなたの伝言は届きました", "당신의 메시지를 받았어요"),
     ("cli.skipped.tomorrow", "明天 %s 再看日程", "明天 %s 再看日程", "Check again tomorrow at %s", "明日 %s にまた確認", "내일 %s에 다시 확인"),
     ("cli.tonight.title", "猫猫今晚 %s 睡觉", "貓貓今晚 %s 睡覺", "Cat sleeps at %s tonight", "今夜のねこの就寝は %s", "오늘 밤 고양이 취침 %s"),
+    ("cli.tonight.postponed", "（已推迟，原定 %s）", "（已推遲，原定 %s）", "(postponed from %s)", "（%s から延期）", "(%s에서 연기)"),
     ("cli.tonight.until", "离猫猫睡觉还有 %s", "離貓貓睡覺還有 %s", "%s until cat bedtime", "就寝まであと %s", "취침까지 %s"),
     ("cli.tonight.remind", "提前 %s 分钟提醒你准备", "提前 %s 分鐘提醒你準備", "Reminder %s min before", "%s 分前にリマインド", "%s분 전에 알림"),
     ("cli.tonight.wakeup", "猫猫早上 %s 走", "貓貓早上 %s 走", "Cat leaves at %s", "ねこは朝 %s に去ります", "고양이는 아침 %s에 떠나요"),

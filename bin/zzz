@@ -40,9 +40,14 @@ cmd_default() {
   fi
 
   local bedtime wakeup winddown
-  bedtime=$(config_get "bedtime")
+  bedtime=$(effective_bedtime)
   wakeup=$(config_get "wakeup")
   winddown=$(config_get "winddown_minutes")
+  local configured_bedtime postpone_line=""
+  configured_bedtime=$(config_get "bedtime")
+  if [ "$bedtime" != "$configured_bedtime" ]; then
+    postpone_line="  $(msg cli.tonight.postponed "$configured_bedtime")"
+  fi
 
   local bed_min now_min remaining
   bed_min=$(time_to_minutes "$bedtime")
@@ -87,12 +92,22 @@ cmd_default() {
       "  ${skip_reason:-$(msg cli.skipped.note)}" \
       "  $(msg cli.skipped.tomorrow "$bedtime")")"
   elif [ "$active_today" = "$(msg cli.yes)" ] && (( remaining > 0 && remaining < 720 )); then
-    ui_box "$(printf '%b\n' \
-      "${BOLD}$(msg cli.tonight.title "$bedtime")${RESET}" \
-      "" \
-      "  $(msg cli.tonight.until "$eta")" \
-      "  $(msg cli.tonight.remind "$winddown")" \
-      "  $(msg cli.tonight.wakeup "$wakeup")")"
+    if [ -n "$postpone_line" ]; then
+      ui_box "$(printf '%b\n' \
+        "${BOLD}$(msg cli.tonight.title "$bedtime")${RESET}" \
+        "" \
+        "$postpone_line" \
+        "  $(msg cli.tonight.until "$eta")" \
+        "  $(msg cli.tonight.remind "$winddown")" \
+        "  $(msg cli.tonight.wakeup "$wakeup")")"
+    else
+      ui_box "$(printf '%b\n' \
+        "${BOLD}$(msg cli.tonight.title "$bedtime")${RESET}" \
+        "" \
+        "  $(msg cli.tonight.until "$eta")" \
+        "  $(msg cli.tonight.remind "$winddown")" \
+        "  $(msg cli.tonight.wakeup "$wakeup")")"
+    fi
   elif [ "$active_today" = "$(msg cli.no)" ]; then
     ui_box "$(printf '%b\n' \
       "${C_GRAY}$(msg cli.off_day)${RESET}" \

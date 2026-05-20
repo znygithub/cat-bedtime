@@ -28,7 +28,7 @@ _script_path() {
 # Calculate wind-down start time from config
 _winddown_start() {
   local bedtime
-  bedtime=$(config_get "bedtime")
+  bedtime=$(effective_bedtime)
   local winddown
   winddown=$(config_get "winddown_minutes")
   if ! [[ "${winddown:-}" =~ ^[0-9]+$ ]] || (( winddown < 1 )); then
@@ -97,7 +97,7 @@ _catchup_weekday() {
 
 _should_kickstart_now() {
   local bedtime wakeup winddown
-  bedtime=$(config_get "bedtime")
+  bedtime=$(effective_bedtime)
   wakeup=$(config_get "wakeup")
   winddown=$(config_get "winddown_minutes")
   if ! [[ "${winddown:-}" =~ ^[0-9]+$ ]] || (( winddown < 1 )); then

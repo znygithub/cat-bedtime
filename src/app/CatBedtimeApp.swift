@@ -75,8 +75,12 @@ class ConfigManager: ObservableObject {
     private var skipURL: URL {
         zzzDir.appendingPathComponent("skip_tonight")
     }
+    private var postponeURL: URL {
+        zzzDir.appendingPathComponent("postpone_tonight")
+    }
 
     @Published var config = CatBedtimeConfig.defaultConfig
+    @Published var tonightPostponedBedtime: String?
 
     private let agentLabel = "com.timetosleep.daemon"
     private var plistPath: String {
@@ -86,6 +90,7 @@ class ConfigManager: ObservableObject {
 
     init() {
         loadConfig()
+        refreshTonightPostpone()
     }
 
     var configExists: Bool {
@@ -120,8 +125,79 @@ class ConfigManager: ObservableObject {
 
     func updateConfigAndReschedule() {
         saveConfig()
-        installSchedule()
+        installSchedule(bedtimeForSchedule: effectiveBedtimeTonight())
         NotificationScheduler.shared.clearPendingReminders()
+    }
+
+    // MARK: Postpone tonight
+
+    func effectiveBedtimeTonight() -> String {
+        readPostponeTonight()?.bedtime ?? config.bedtime
+    }
+
+    func refreshTonightPostpone() {
+        let hadStale = cleanupStalePostponeIfNeeded()
+        tonightPostponedBedtime = readPostponeTonight()?.bedtime
+        if hadStale {
+            installSchedule(bedtimeForSchedule: config.bedtime)
+        }
+    }
+
+    @discardableResult
+    func postponeTonight(minutes delayMinutes: Int, reason: String) -> String? {
+        guard delayMinutes > 0,
+              let baseMin = minutes(from: effectiveBedtimeTonight()) else { return nil }
+
+        ensureDir()
+        let newMin = (baseMin + delayMinutes) % 1440
+        let newBedtime = formatMinutes(newMin)
+
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        let today = fmt.string(from: Date())
+        let content = "\(today)\n\(newBedtime)\n\(reason)\n"
+        try? content.write(to: postponeURL, atomically: true, encoding: .utf8)
+
+        tonightPostponedBedtime = newBedtime
+        DispatchQueue.global(qos: .utility).async { [self] in
+            installSchedule(bedtimeForSchedule: newBedtime)
+        }
+        return newBedtime
+    }
+
+    private func readPostponeTonight() -> (bedtime: String, reason: String)? {
+        guard let content = try? String(contentsOf: postponeURL, encoding: .utf8) else { return nil }
+        let lines = content.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        guard lines.count >= 2 else { return nil }
+
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        let today = fmt.string(from: Date())
+        guard lines[0] == today else { return nil }
+
+        let reason = lines.count > 2 ? lines[2] : ""
+        return (lines[1], reason)
+    }
+
+    @discardableResult
+    private func cleanupStalePostponeIfNeeded() -> Bool {
+        guard FileManager.default.fileExists(atPath: postponeURL.path),
+              let content = try? String(contentsOf: postponeURL, encoding: .utf8) else { return false }
+        let lines = content.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        guard let postponeDate = lines.first else { return false }
+
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        let today = fmt.string(from: Date())
+        guard postponeDate != today else { return false }
+
+        try? FileManager.default.removeItem(at: postponeURL)
+        return true
+    }
+
+    private func formatMinutes(_ totalMin: Int) -> String {
+        let normalized = ((totalMin % 1440) + 1440) % 1440
+        return String(format: "%02d:%02d", normalized / 60, normalized % 60)
     }
 
     // MARK: Stats
@@ -149,9 +225,10 @@ class ConfigManager: ObservableObject {
 
     // MARK: launchd schedule
 
-    func installSchedule() {
+    func installSchedule(bedtimeForSchedule: String? = nil) {
+        let scheduleBedtime = bedtimeForSchedule ?? config.bedtime
         let daemonPath = findDaemonPath()
-        let (hour, minute) = winddownStartTime()
+        let (hour, minute) = winddownStartTime(bedtime: scheduleBedtime)
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let logPath = zzzDir.appendingPathComponent("daemon.log").path
 
@@ -208,7 +285,7 @@ class ConfigManager: ObservableObject {
         try? FileManager.default.removeItem(atPath: legacyPlist)
         // bootstrap new
         shellRun("/bin/launchctl", ["bootstrap", gui, plistPath])
-        if shouldKickstartDaemonNow() {
+        if shouldKickstartDaemonNow(bedtime: scheduleBedtime) {
             shellRun("/bin/launchctl", ["kickstart", "-k", "\(gui)/\(agentLabel)"])
         }
     }
@@ -238,8 +315,8 @@ class ConfigManager: ObservableObject {
         return installed
     }
 
-    private func winddownStartTime() -> (Int, Int) {
-        let parts = config.bedtime.split(separator: ":")
+    private func winddownStartTime(bedtime: String) -> (Int, Int) {
+        let parts = bedtime.split(separator: ":")
         guard parts.count == 2,
               let bh = Int(parts[0]), let bm = Int(parts[1]) else { return (22, 45) }
         var startMin = bh * 60 + bm - config.winddown_minutes
@@ -247,8 +324,8 @@ class ConfigManager: ObservableObject {
         return (startMin / 60, startMin % 60)
     }
 
-    private func shouldKickstartDaemonNow(date: Date = Date()) -> Bool {
-        guard let bedMin = minutes(from: config.bedtime),
+    private func shouldKickstartDaemonNow(bedtime: String, date: Date = Date()) -> Bool {
+        guard let bedMin = minutes(from: bedtime),
               let wakeMin = minutes(from: config.wakeup) else { return false }
 
         let winddown = max(config.winddown_minutes, 1)
@@ -446,16 +523,42 @@ class NotificationScheduler {
 private enum NotificationCommand {
     static func exitIfRequested(arguments: [String] = CommandLine.arguments) {
         let args = Array(arguments.dropFirst())
-        guard args.first == "--notify" else { return }
-        guard args.count >= 4 else {
-            writeStderr("usage: zzz-app --notify <title> <subtitle> <body>")
-            Darwin.exit(64)
+        guard let mode = args.first, mode == "--notify" || mode == "--notify-l10n" else { return }
+
+        L10n.prepareForAppLaunch()
+
+        let title: String
+        let subtitle: String
+        let body: String
+
+        if mode == "--notify-l10n" {
+            guard args.count >= 5 else {
+                writeStderr("usage: zzz-app --notify-l10n <titleKey> <subtitleKey> <subtitleArg|- > <bodyKey>")
+                Darwin.exit(64)
+            }
+            title = L10n.t(args[1])
+            if args[2] == "-" {
+                subtitle = ""
+            } else if let n = Int(args[3]) {
+                subtitle = L10n.tf(args[2], n)
+            } else {
+                subtitle = L10n.t(args[2])
+            }
+            body = L10n.t(args[4])
+        } else {
+            guard args.count >= 4 else {
+                writeStderr("usage: zzz-app --notify <title> <subtitle> <body>")
+                Darwin.exit(64)
+            }
+            title = args[1]
+            subtitle = args[2]
+            body = args[3]
         }
 
         let ok = NotificationScheduler.shared.sendImmediateNotification(
-            title: args[1],
-            subtitle: args[2],
-            body: args[3]
+            title: title,
+            subtitle: subtitle,
+            body: body
         )
         Darwin.exit(ok ? 0 : 1)
     }
@@ -984,7 +1087,13 @@ struct DashboardView: View {
     @Binding var wakeup: Date
     @State private var showDelay = false
     @State private var savedNotice = false
+    @State private var delayNotice: String?
+    @State private var visiblePostponedBedtime: String?
     @State private var dashboardCardHeight: CGFloat = 0
+
+    private var postponedBedtime: String? {
+        visiblePostponedBedtime ?? mgr.tonightPostponedBedtime
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -1015,6 +1124,13 @@ struct DashboardView: View {
             .padding(.horizontal, 8)
             .padding(.bottom, 20)
 
+            if let postponed = postponedBedtime {
+                postponedBanner(postponed)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 14)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
             // 2-col grid — intrinsic height only; both cards share measured height
             HStack(alignment: .top, spacing: 12) {
                 dashboardScheduleCard
@@ -1037,6 +1153,13 @@ struct DashboardView: View {
 
             // Confirm button
             VStack(spacing: 8) {
+                if let delayNotice {
+                    Text(delayNotice)
+                        .font(Lamp.rounded(13, weight: .medium))
+                        .foregroundColor(Lamp.tealTrust)
+                        .multilineTextAlignment(.center)
+                        .transition(.opacity)
+                }
                 if savedNotice {
                     Text(L10n.t("dashboard.saved"))
                         .font(Lamp.rounded(13, weight: .medium))
@@ -1054,13 +1177,47 @@ struct DashboardView: View {
         .padding(.bottom, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .sheet(isPresented: $showDelay) {
-            DelayPopover(isPresented: $showDelay)
-                .environmentObject(mgr)
+            DelayPopover(isPresented: $showDelay) { newBedtime in
+                visiblePostponedBedtime = newBedtime
+                withAnimation {
+                    delayNotice = L10n.ts("delay.confirmed", newBedtime)
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                    withAnimation { delayNotice = nil }
+                }
+            }
+            .environmentObject(mgr)
         }
         .onAppear {
             resizeWindow(width: 520, height: 600)
             syncFromConfig()
+            mgr.refreshTonightPostpone()
+            visiblePostponedBedtime = mgr.tonightPostponedBedtime
         }
+    }
+
+    private func postponedBanner(_ postponed: String) -> some View {
+        HStack(spacing: 10) {
+            Text("⏰")
+                .font(Lamp.rounded(18, weight: .bold))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(L10n.ts("dashboard.tonight_postponed", postponed))
+                    .font(Lamp.rounded(14, weight: .bold))
+                    .foregroundColor(Lamp.creamText)
+                Text(L10n.ts("dashboard.original_bedtime", mgr.config.bedtime))
+                    .font(Lamp.rounded(11, weight: .medium))
+                    .foregroundColor(Lamp.sandMuted)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .background(Lamp.tealTrust.opacity(0.16))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Lamp.tealTrust.opacity(0.28), lineWidth: 1)
+        )
     }
 
     private var dashboardScheduleCard: some View {
@@ -1072,6 +1229,18 @@ struct DashboardView: View {
                     .foregroundColor(Lamp.creamText)
             }
             timeRow(label: L10n.t("dashboard.sleep"), time: $bedtime)
+            if let postponed = postponedBedtime {
+                HStack(spacing: 7) {
+                    Text("✓")
+                        .font(Lamp.rounded(12, weight: .bold))
+                        .foregroundColor(Lamp.tealTrust)
+                    Text(L10n.ts("dashboard.tonight_postponed", postponed))
+                        .font(Lamp.rounded(12, weight: .semibold))
+                        .foregroundColor(Lamp.tealTrust)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, -4)
+            }
             timeRow(label: L10n.t("dashboard.wakeup"), time: $wakeup)
         }
     }
@@ -1165,12 +1334,15 @@ struct MoonIcon: View {
 
 struct DelayPopover: View {
     @Binding var isPresented: Bool
+    var onConfirmed: ((String) -> Void)? = nil
     @EnvironmentObject var mgr: ConfigManager
 
     @State private var reason = ""
-    @State private var selectedMinutes: Int? = nil
+    @State private var selectedMinutes: Int? = 30
     @State private var customMinutes = "45"
     @State private var showCustom = false
+    @State private var isSubmitting = false
+    @State private var confirmation: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -1243,13 +1415,27 @@ struct DelayPopover: View {
             HStack(spacing: 10) {
                 Button(L10n.t("delay.cancel")) { isPresented = false }
                     .buttonStyle(GhostButtonStyle())
+                    .disabled(isSubmitting)
                 Button(L10n.t("delay.submit")) { confirmDelay() }
                     .buttonStyle(LampButtonStyle(block: true))
+                    .disabled(isSubmitting)
+                    .opacity(isSubmitting ? 0.72 : 1)
+            }
+
+            if let confirmation {
+                Text(confirmation)
+                    .font(Lamp.rounded(13, weight: .semibold))
+                    .foregroundColor(Lamp.tealTrust)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 12)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding(24)
         .frame(width: 340)
         .background(Lamp.nightElevated)
+        .animation(.easeInOut(duration: 0.18), value: confirmation)
     }
 
     private func delayOption(_ label: String, minutes: Int) -> some View {
@@ -1280,6 +1466,8 @@ struct DelayPopover: View {
     }
 
     private func confirmDelay() {
+        guard !isSubmitting else { return }
+
         var minutes: Int
         if showCustom {
             minutes = Int(customMinutes) ?? 30
@@ -1291,8 +1479,25 @@ struct DelayPopover: View {
         if minutes <= 0 { minutes = 30 }
 
         let reasonText = reason.isEmpty ? L10n.tf("delay.default_reason", minutes) : reason
-        mgr.writeSkipTonight(reason: reasonText)
-        isPresented = false
+        guard let newBedtime = mgr.postponeTonight(minutes: minutes, reason: reasonText) else { return }
+
+        withAnimation {
+            isSubmitting = true
+            confirmation = L10n.ts("delay.confirmed", newBedtime)
+        }
+        onConfirmed?(newBedtime)
+
+        DispatchQueue.global(qos: .utility).async {
+            NotificationScheduler.shared.sendImmediateNotification(
+                title: L10n.t("notify.delay.title"),
+                subtitle: L10n.ts("notify.delay.subtitle", newBedtime),
+                body: L10n.t("notify.delay.body")
+            )
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            isPresented = false
+        }
     }
 }
 
@@ -1413,6 +1618,7 @@ final class FillHostingView<Content: View>: NSHostingView<Content> {
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var window: NSWindow!
+    private var commandWMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         L10n.prepareForAppLaunch()
@@ -1447,7 +1653,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         if let minimizeButton = window.standardWindowButton(.miniaturizeButton) {
             minimizeButton.target = self
-            minimizeButton.action = #selector(hideWindowToDockIcon(_:))
+            minimizeButton.action = #selector(hideWindowToAppIcon(_:))
         }
 
         let hostingView = FillHostingView(rootView: contentView)
@@ -1468,6 +1674,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             name: NSApplication.didBecomeActiveNotification,
             object: nil
         )
+        installCommandWMonitor()
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -1478,24 +1685,48 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return false
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        if let commandWMonitor {
+            NSEvent.removeMonitor(commandWMonitor)
+        }
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         showMainWindow()
         return true
     }
 
     @objc func applicationDidBecomeActive(_ notification: Notification) {
-        if !window.isVisible {
+        if !window.isVisible && !window.isMiniaturized {
             showMainWindow()
         }
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        hideWindowToDockIcon(sender)
+        hideWindowToAppIcon(sender)
         return false
     }
 
-    @objc private func hideWindowToDockIcon(_ sender: Any?) {
+    @objc private func hideWindowToAppIcon(_ sender: Any?) {
+        if window.isMiniaturized {
+            window.deminiaturize(nil)
+        }
         window.orderOut(sender)
+    }
+
+    private func installCommandWMonitor() {
+        commandWMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            let isCommandW = flags.contains(.command)
+                && !flags.contains(.option)
+                && !flags.contains(.control)
+                && event.charactersIgnoringModifiers?.lowercased() == "w"
+            if isCommandW {
+                self?.hideWindowToAppIcon(event)
+                return nil
+            }
+            return event
+        }
     }
 
     private func showMainWindow() {
@@ -1537,6 +1768,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         ))
+
+        let fileMenuItem = NSMenuItem()
+        mainMenu.addItem(fileMenuItem)
+        let fileMenu = NSMenu(title: L10n.t("menu.file"))
+        fileMenuItem.submenu = fileMenu
+        let closeWindow = NSMenuItem(
+            title: L10n.t("menu.hide_window"),
+            action: #selector(hideWindowToAppIcon(_:)),
+            keyEquivalent: "w"
+        )
+        closeWindow.target = self
+        fileMenu.addItem(closeWindow)
 
         let editMenuItem = NSMenuItem()
         mainMenu.addItem(editMenuItem)

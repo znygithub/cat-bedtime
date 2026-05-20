@@ -14,10 +14,22 @@ LOG_TAG="[zzz-daemon]"
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S') $LOG_TAG $*"; }
 
 # ── Load config ──────────────────────────────────────────────────
-BEDTIME=$(config_get "bedtime")
+BEDTIME=$(effective_bedtime)
 WAKEUP=$(config_get "wakeup")
 WINDDOWN=$(config_get "winddown_minutes")
 MESSAGE=$(config_get "message")
+
+POSTPONE_FILE="$ZZZ_DIR/postpone_tonight"
+if [ -f "$POSTPONE_FILE" ]; then
+  postpone_date=$(head -n 1 "$POSTPONE_FILE" 2>/dev/null || true)
+  postpone_bed=$(sed -n '2p' "$POSTPONE_FILE" 2>/dev/null || true)
+  today=$(date +%Y-%m-%d)
+  if [ "$postpone_date" = "$today" ] && [ -n "$postpone_bed" ]; then
+    log "Using postponed bedtime for tonight: $postpone_bed"
+  elif [ -n "$postpone_date" ] && [ "$postpone_date" != "$today" ]; then
+    rm -f "$POSTPONE_FILE"
+  fi
+fi
 
 if [ -z "$BEDTIME" ] || [ -z "$WAKEUP" ]; then
   log "ERROR: Config not found or incomplete. Run 'zzz init' first."
@@ -76,23 +88,27 @@ find_app_notify_bundle() {
   return 1
 }
 
-notify_native() {
-  local title="$1" subtitle="$2" body="$3" app output status
+notify_native_l10n() {
+  local title_key="$1" subtitle_key="$2" subtitle_arg="$3" body_key="$4"
+  local app output status
   app=$(find_app_notify_bundle) || return 127
 
-  output=$(/usr/bin/open -g -j -n "$app" --args --notify "$title" "$subtitle" "$body" 2>&1)
+  output=$(/usr/bin/open -g -j -n "$app" --args --notify-l10n \
+    "$title_key" "$subtitle_key" "${subtitle_arg:--}" "$body_key" 2>&1)
   status=$?
   if (( status != 0 )); then
     log "native notify failed ($status): ${output:-no output}"
     return "$status"
   fi
-  log "native notify sent: ${title//$'\n'/ } — ${subtitle:-∅}"
+  log "native notify sent: $title_key — ${subtitle_key:-∅}"
   return 0
 }
 
 notify() {
-  local title="$1" subtitle="$2" body="$3" button="$4" output status
-  notify_native "$title" "$subtitle" "$body"
+  local title_key="$1" subtitle_key="$2" subtitle_arg="$3" body_key="$4" button_key="$5"
+  local title subtitle body button output status
+
+  notify_native_l10n "$title_key" "$subtitle_key" "$subtitle_arg" "$body_key"
   status=$?
   if (( status == 0 )); then
     return 0
@@ -102,6 +118,17 @@ notify() {
     log "native notify was available but failed; skipping osascript alert fallback"
     return "$status"
   fi
+
+  title="$(msg "$title_key")"
+  if [[ "$subtitle_key" == "-" ]]; then
+    subtitle=""
+  elif [[ "$subtitle_arg" =~ ^[0-9]+$ ]]; then
+    subtitle="$(msg "$subtitle_key" "$subtitle_arg")"
+  else
+    subtitle="$(msg "$subtitle_key")"
+  fi
+  body="$(msg "$body_key")"
+  button="$(msg "$button_key")"
 
   # NOTE: keep argv passing here. It avoids quoting bugs with CJK text.
   # NOTE: do not pass `--` between `-` and the script's args. macOS osascript
@@ -214,10 +241,11 @@ wind_down() {
 
   # First reminder: wind-down start (= "提前 N 分钟"，常见为 30 分钟)
   notify \
-    "$(msg notify.winddown.title)" \
-    "$(msg notify.winddown.subtitle "$total_min")" \
-    "$(msg notify.winddown.body)" \
-    "$(msg notify.winddown.button)"
+    "notify.winddown.title" \
+    "notify.winddown.subtitle" \
+    "$total_min" \
+    "notify.winddown.body" \
+    "notify.winddown.button"
 
   if ! is_active_winddown_day; then
     log "Reminder sent; wind-down belongs to inactive weekday ($(active_weekday_for_winddown)), skipping lockdown."
@@ -277,10 +305,11 @@ wind_down() {
       brightness_restore; media_restore_volume; return 1
     fi
     notify \
-      "$(msg notify.locksoon.title)" \
-      "$(msg notify.locksoon.subtitle)" \
-      "$(msg notify.locksoon.body)" \
-      "$(msg notify.locksoon.button)"
+      "notify.locksoon.title" \
+      "notify.locksoon.subtitle" \
+      "-" \
+      "notify.locksoon.body" \
+      "notify.locksoon.button"
   fi
 
   # Final wait until exact bedtime
