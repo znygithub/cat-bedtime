@@ -4,6 +4,8 @@
 
 **猫猫困了**（Cat Bedtime）是 macOS 上的睡前锁屏工具：你设定猫猫每天几点来、几点走；到点后它会占住屏幕睡觉，提醒你也该睡觉了。
 
+https://github.com/znygithub/cat-bedtime/releases/download/v1.0.0/product-demo.mp4
+
 ---
 
 ## 为什么做这个
