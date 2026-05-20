@@ -106,6 +106,12 @@ bash src/app/build.sh    # 本地编译 App → bin/Cat Bedtime.app
 
 ---
 
+## 版本记录
+
+各版本更新说明见 [CHANGELOG.md](CHANGELOG.md)，安装包见 [Releases](https://github.com/znygithub/cat-bedtime/releases)。
+
+---
+
 ## 许可
 
 [MIT](LICENSE)

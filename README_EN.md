@@ -127,10 +127,15 @@ The cat lock-screen video `assets/cat-bedtime.mov` is bundled in release archive
 
 ---
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history. Installers are on [Releases](https://github.com/znygithub/cat-bedtime/releases).
+
 ## Docs (developers)
 
 | Doc | Purpose |
 | --- | --- |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture |
 | [PITFALLS.md](PITFALLS.md) | Known pitfalls |
 
