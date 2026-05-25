@@ -100,11 +100,11 @@ add("notify.delay.subtitle", "今晚 %@ 睡觉", "今晚 %@ 睡覺", "Sleep time
 add("notify.delay.body", "到点它还会准时来的", "到點牠還會準時來的", "It'll still come on time", "時間になったら来ます", "시간이 되면 제때 올 거예요")
 add("quit.title", "确定要退出猫猫困了吗？", "確定要退出貓貓困了嗎？", "Quit Cat Bedtime?", "Cat Bedtime を終了しますか？", "Cat Bedtime를 종료할까요?")
 add("quit.message",
-    "退出会关闭设置 App\n但不会取消睡眠时间和后台定时任务，到点仍会锁屏",
-    "退出會關閉設定 App\n但不會取消睡眠時間和背景定時任務，到點仍會鎖屏",
-    "This quits the settings app.\nYour schedule and background task stay active, so lock screen still starts on time.",
-    "設定アプリを終了します。\nスケジュールとバックグラウンド処理は残り、時間になるとロックされます。",
-    "설정 앱이 종료됩니다.\n일정과 백그라운드 작업은 유지되며, 시간이 되면 잠금 화면이 켜집니다.")
+    "退出会关闭设置 App，并暂停后台定时任务。\n下次打开 App 后会恢复睡眠时间。",
+    "退出會關閉設定 App，並暫停背景定時任務。\n下次打開 App 後會恢復睡眠時間。",
+    "This quits the settings app and pauses the background schedule.\nOpen the app again to restore bedtime.",
+    "設定アプリを終了し、バックグラウンドのスケジュールを一時停止します。\n次にアプリを開くと就寝時刻が復元されます。",
+    "설정 앱을 종료하고 백그라운드 일정을 일시 중지합니다.\n앱을 다시 열면 취침 시간이 복원됩니다.")
 add("quit.confirm", "退出", "退出", "Quit", "終了", "종료")
 add("quit.cancel", "取消", "取消", "Cancel", "キャンセル", "취소")
 add("menu.quit", "退出猫猫困了", "退出貓貓困了", "Quit Cat Bedtime", "Cat Bedtime を終了", "Cat Bedtime 종료")
@@ -126,9 +126,13 @@ add("notify.winddown.subtitle", "还有 %d 分钟到关灯", "還有 %d 分鐘�
 add("notify.winddown.body", "收尾这一小段就好", "收尾這一小段就好", "Just wrap up this bit", "このあたりを片づけましょう", "이 정도만 마무리해요")
 add("notify.winddown.button", "知道啦", "知道啦", "Got it", "わかった", "알겠어요")
 add("notify.locksoon.title", "💤  它要去拉灯绳了", "💤  牠要去拉燈繩了", "💤  It's pulling the lamp cord", "💤  消灯のひもを引きに行きます", "💤  불 끄러 가요")
-add("notify.locksoon.subtitle", "一分钟后锁屏", "一分鐘後鎖屏", "Lock screen in one minute", "1 分後にロック", "1분 후 잠금")
-add("notify.locksoon.body", "手头的按个保存就好，今天到这", "手頭的按個保存就好，今天到這",
-    "Save what you're doing — that's enough for today", "手元の作業を保存して、今日はここまで", "하고 있던 건 저장하고, 오늘은 여기까지")
+add("notify.locksoon.subtitle", "约两分钟后锁屏", "約兩分鐘後鎖屏", "Lock screen in about two minutes", "約 2 分後にロック", "약 2분 후 잠금")
+add("notify.locksoon.body",
+    "猫猫睡觉后，电脑将无法使用（直到起床）。请尽快保存手头的事。",
+    "貓貓睡覺後，電腦將無法使用（直到起床）。請盡快保存手頭的事。",
+    "After the cat sleeps, the computer won't be usable until wake-up. Save your work now.",
+    "ねこが寝たあと、パソコンは（起床まで）使えません。手元の作業を保存してください。",
+    "고양이가 잠든 뒤에는 (기상할 때까지) 컴퓨터를 쓸 수 없어요. 하던 일을 저장하세요.")
 add("notify.locksoon.button", "好", "好", "OK", "OK", "좋아요")
 
 # CLI keys (abbreviated - full set)

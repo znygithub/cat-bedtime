@@ -78,6 +78,13 @@
       "ja": "確認",
       "ko": "확인"
     },
+    "config.error.lock_duration": {
+      "zh-Hans": "锁屏时间需要少于 15 小时，请调整睡觉或起床时间",
+      "zh-Hant": "鎖屏時間需要少於 15 小時，請調整睡覺或起床時間",
+      "en": "Lock time must be under 15 hours. Adjust bedtime or wake-up.",
+      "ja": "ロック時間は 15 時間未満にしてください。就寝または起床時刻を調整してください。",
+      "ko": "잠금 시간은 15시간 미만이어야 해요. 취침 또는 기상 시간을 조정하세요."
+    },
     "agreement.title": {
       "zh-Hans": "领养协议签署",
       "zh-Hant": "領養協議簽署",
@@ -155,19 +162,33 @@
       "ja": "確認しました！",
       "ko": "확인했어요!"
     },
-    "agreement.wrong_final": {
-      "zh-Hans": "未正确输入，想好了再来哦～",
-      "zh-Hant": "未正確輸入，想好了再來哦～",
-      "en": "Incorrect text. Come back when you're ready.",
-      "ja": "入力が違います。準備ができたらまたどうぞ",
-      "ko": "입력이 맞지 않아요. 준비되면 다시 와 주세요"
+    "agreement.wrong": {
+      "zh-Hans": "还差一点，请完整输入内容",
+      "zh-Hant": "還差一點，請完整輸入內容",
+      "en": "Almost there. Please enter the full text.",
+      "ja": "あと少しです。内容をすべて入力してください。",
+      "ko": "조금만 더요. 내용을 모두 입력해 주세요."
     },
-    "agreement.wrong_attempts": {
-      "zh-Hans": "输入不正确，还有 %d 次机会",
-      "zh-Hant": "輸入不正確，還有 %d 次機會",
-      "en": "Incorrect. %d attempts left",
-      "ja": "入力が違います。あと %d 回",
-      "ko": "입력이 틀렸어요. %d번 남았습니다"
+    "agreement.restart_notice": {
+      "zh-Hans": "提示：猫猫入睡后无法正常使用电脑，重启电脑后猫猫会离开",
+      "zh-Hant": "提示：貓貓入睡後無法正常使用電腦，重啟電腦後貓貓會離開",
+      "en": "Note: once the cat sleeps, the computer cannot be used normally. Restarting makes the cat leave.",
+      "ja": "注意：ねこが寝た後はパソコンを通常どおり使えません。再起動するとねこは離れます。",
+      "ko": "안내: 고양이가 잠들면 컴퓨터를 정상적으로 쓸 수 없어요. 재시동하면 고양이가 떠납니다."
+    },
+    "agreement.immediate_lock_title": {
+      "zh-Hans": "现在已经过了今天的睡觉时间",
+      "zh-Hant": "現在已經過了今天的睡覺時間",
+      "en": "Today's bedtime has already passed",
+      "ja": "今日の就寝時刻はもう過ぎています",
+      "ko": "오늘 취침 시간이 이미 지났어요"
+    },
+    "agreement.immediate_lock_body": {
+      "zh-Hans": "确认后会马上锁屏。",
+      "zh-Hant": "確認後會馬上鎖屏。",
+      "en": "Confirming will lock right away.",
+      "ja": "確認するとすぐロックされます。",
+      "ko": "확정하면 바로 잠깁니다."
     },
     "pledge.required_phrase": {
       "zh-Hans": "我愿意遵守承诺让猫猫好好休息",
@@ -456,6 +477,13 @@
       "ja": "ねこ、わかった！今夜の最新就寝時間は %@",
       "ko": "고양이가 알았어요! 오늘 밤 최신 취침 시간 %@"
     },
+    "delay.lock_too_long": {
+      "zh-Hans": "这样会锁太久。锁屏时间需要少于 15 小时",
+      "zh-Hant": "這樣會鎖太久。鎖屏時間需要少於 15 小時",
+      "en": "That would lock too long. Lock time must be under 15 hours.",
+      "ja": "ロックが長すぎます。15 時間未満にしてください。",
+      "ko": "너무 오래 잠겨요. 잠금 시간은 15시간 미만이어야 해요."
+    },
     "dashboard.tonight_postponed": {
       "zh-Hans": "今晚最新睡眠时间：%@",
       "zh-Hant": "今晚最新睡眠時間：%@",
@@ -499,11 +527,11 @@
       "ko": "Cat Bedtime를 종료할까요?"
     },
     "quit.message": {
-      "zh-Hans": "退出会关闭设置 App\n但不会取消睡眠时间和后台定时任务，到点仍会锁屏",
-      "zh-Hant": "退出會關閉設定 App\n但不會取消睡眠時間和背景定時任務，到點仍會鎖屏",
-      "en": "This quits the settings app.\nYour schedule and background task stay active, so lock screen still starts on time.",
-      "ja": "設定アプリを終了します。\nスケジュールとバックグラウンド処理は残り、時間になるとロックされます。",
-      "ko": "설정 앱이 종료됩니다.\n일정과 백그라운드 작업은 유지되며, 시간이 되면 잠금 화면이 켜집니다."
+      "zh-Hans": "退出会关闭设置 App，并暂停后台定时任务。\n下次打开 App 后会恢复睡眠时间。",
+      "zh-Hant": "退出會關閉設定 App，並暫停背景定時任務。\n下次打開 App 後會恢復睡眠時間。",
+      "en": "This quits the settings app and pauses the background schedule.\nOpen the app again to restore bedtime.",
+      "ja": "設定アプリを終了し、バックグラウンドのスケジュールを一時停止します。\n次にアプリを開くと就寝時刻が復元されます。",
+      "ko": "설정 앱을 종료하고 백그라운드 일정을 일시 중지합니다.\n앱을 다시 열면 취침 시간이 복원됩니다."
     },
     "quit.confirm": {
       "zh-Hans": "退出",
@@ -582,6 +610,20 @@
       "ja": "ねこのアニメ素材がありません\n~/.timetosleep/assets/cat-bedtime.mov",
       "ko": "고양이 애니메이션 없음\n~/.timetosleep/assets/cat-bedtime.mov"
     },
+    "lock.escape_rest": {
+      "zh-Hans": "猫猫正在休息，不要打扰它",
+      "zh-Hant": "貓貓正在休息，不要打擾牠",
+      "en": "The cat is resting. Please don't disturb it.",
+      "ja": "ねこは休んでいます。起こさないでください。",
+      "ko": "고양이가 쉬고 있어요. 방해하지 말아 주세요."
+    },
+    "lock.escape_restart": {
+      "zh-Hans": "需要退出的话，请重启电脑",
+      "zh-Hant": "需要退出的話，請重啟電腦",
+      "en": "To exit now, restart the computer.",
+      "ja": "今すぐ終了するには、コンピュータを再起動してください。",
+      "ko": "지금 나가려면 컴퓨터를 재시동하세요."
+    },
     "notify.winddown.title": {
       "zh-Hans": "🐾  猫猫开始打哈欠了",
       "zh-Hant": "🐾  貓貓開始打哈欠了",
@@ -618,18 +660,18 @@
       "ko": "💤  불 끄러 가요"
     },
     "notify.locksoon.subtitle": {
-      "zh-Hans": "一分钟后锁屏",
-      "zh-Hant": "一分鐘後鎖屏",
-      "en": "Lock screen in one minute",
-      "ja": "1 分後にロック",
-      "ko": "1분 후 잠금"
+      "zh-Hans": "约两分钟后锁屏",
+      "zh-Hant": "約兩分鐘後鎖屏",
+      "en": "Lock screen in about two minutes",
+      "ja": "約 2 分後にロック",
+      "ko": "약 2분 후 잠금"
     },
     "notify.locksoon.body": {
-      "zh-Hans": "手头的按个保存就好，今天到这",
-      "zh-Hant": "手頭的按個保存就好，今天到這",
-      "en": "Save what you're doing — that's enough for today",
-      "ja": "手元の作業を保存して、今日はここまで",
-      "ko": "하고 있던 건 저장하고, 오늘은 여기까지"
+      "zh-Hans": "猫猫睡觉后，电脑将无法使用（直到起床）。请尽快保存手头的事。",
+      "zh-Hant": "貓貓睡覺後，電腦將無法使用（直到起床）。請盡快保存手頭的事。",
+      "en": "After the cat sleeps, the computer won't be usable until wake-up. Save your work now.",
+      "ja": "ねこが寝たあと、パソコンは（起床まで）使えません。手元の作業を保存してください。",
+      "ko": "고양이가 잠든 뒤에는 (기상할 때까지) 컴퓨터를 쓸 수 없어요. 하던 일을 저장하세요."
     },
     "notify.locksoon.button": {
       "zh-Hans": "好",
@@ -637,6 +679,48 @@
       "en": "OK",
       "ja": "OK",
       "ko": "좋아요"
+    },
+    "notify.bedtime.title": {
+      "zh-Hans": "猫猫困了（%d分钟后锁屏）",
+      "zh-Hant": "貓貓睏了（%d分鐘後鎖屏）",
+      "en": "The cat is sleepy (locks in %d min)",
+      "ja": "ねこが眠そうです（%d 分後にロック）",
+      "ko": "고양이가 졸려요 (%d분 후 잠금)"
+    },
+    "notify.bedtime.subtitle": {
+      "zh-Hans": "还有 %d 分钟锁屏",
+      "zh-Hant": "還有 %d 分鐘鎖屏",
+      "en": "Lock screen in %d min",
+      "ja": "あと %d 分でロック",
+      "ko": "%d분 후 잠금"
+    },
+    "notify.bedtime.body": {
+      "zh-Hans": "到点后，电脑将被猫猫占用，请尽快收尾手头的工作",
+      "zh-Hant": "到點後，電腦將被貓貓佔用，請盡快收尾手頭的工作",
+      "en": "At bedtime, the cat takes over the computer. Please wrap up your work.",
+      "ja": "時間になると、パソコンはねこが使います。作業を早めに終えてください。",
+      "ko": "시간이 되면 고양이가 컴퓨터를 차지해요. 하던 일을 마무리해 주세요."
+    },
+    "notify.bedtime.ok": {
+      "zh-Hans": "知道了",
+      "zh-Hant": "知道了",
+      "en": "Got it",
+      "ja": "わかった",
+      "ko": "알겠어요"
+    },
+    "notify.bedtime.postpone_5": {
+      "zh-Hans": "推迟 5 分钟",
+      "zh-Hant": "推遲 5 分鐘",
+      "en": "Postpone 5 min",
+      "ja": "5 分延長",
+      "ko": "5분 미루기"
+    },
+    "notify.bedtime.postpone_reason": {
+      "zh-Hans": "睡前提醒推迟 5 分钟",
+      "zh-Hant": "睡前提醒推遲 5 分鐘",
+      "en": "Bedtime reminder postponed 5 min",
+      "ja": "就寝リマインダーを 5 分延長",
+      "ko": "취침 알림 5분 미루기"
     },
     "cli.not_configured": {
       "zh-Hans": "还没有领养猫猫。运行 zzz init 开始",

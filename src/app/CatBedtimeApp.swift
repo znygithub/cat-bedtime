@@ -39,6 +39,11 @@ enum Lamp {
     }
 }
 
+enum ProductDefaults {
+    static let winddownMinutes = 5
+    static let postponeMinutes = 5
+}
+
 // MARK: - Config Model
 
 struct CatBedtimeConfig: Codable {
@@ -53,10 +58,79 @@ struct CatBedtimeConfig: Codable {
         bedtime: "23:00",
         wakeup: "07:00",
         days: ["1", "2", "3", "4", "5"],
-        winddown_minutes: 15,
+        winddown_minutes: ProductDefaults.winddownMinutes,
         activated_at: "",
         version: "1.0.0"
     )
+}
+
+enum ScheduleRules {
+    static let maxLockMinutes = 15 * 60
+
+    static func parseHHMM(_ value: String) -> Int? {
+        let parts = value.split(separator: ":")
+        guard parts.count == 2,
+              let hour = Int(parts[0]),
+              let minute = Int(parts[1]),
+              (0...23).contains(hour),
+              (0...59).contains(minute) else { return nil }
+        return hour * 60 + minute
+    }
+
+    static func formatMinutes(_ totalMin: Int) -> String {
+        let normalized = ((totalMin % 1440) + 1440) % 1440
+        return String(format: "%02d:%02d", normalized / 60, normalized % 60)
+    }
+
+    static func lockDurationMinutes(bedtime: String, wakeup: String) -> Int? {
+        guard let bedMin = parseHHMM(bedtime),
+              let wakeMin = parseHHMM(wakeup) else { return nil }
+        let diff = (wakeMin - bedMin + 1440) % 1440
+        return diff == 0 ? 1440 : diff
+    }
+
+    static func isAllowedLockDuration(bedtime: String, wakeup: String) -> Bool {
+        guard let duration = lockDurationMinutes(bedtime: bedtime, wakeup: wakeup) else { return false }
+        return duration > 0 && duration < maxLockMinutes
+    }
+
+    static func minutes(in date: Date = Date()) -> Int {
+        let cal = Calendar.current
+        return cal.component(.hour, from: date) * 60 + cal.component(.minute, from: date)
+    }
+
+    static func isInLockWindow(bedtime: String, wakeup: String, date: Date = Date()) -> Bool {
+        guard let bedMin = parseHHMM(bedtime),
+              let wakeMin = parseHHMM(wakeup) else { return false }
+        let nowMin = minutes(in: date)
+        if bedMin > wakeMin {
+            return nowMin >= bedMin || nowMin < wakeMin
+        }
+        return nowMin >= bedMin && nowMin < wakeMin
+    }
+
+    static func isoWeekday(for date: Date = Date()) -> Int {
+        let weekday = Calendar.current.component(.weekday, from: date)
+        return weekday == 1 ? 7 : weekday - 1
+    }
+
+    static func activeWeekdayForLockWindow(bedtime: String, wakeup: String, date: Date = Date()) -> Int {
+        guard let bedMin = parseHHMM(bedtime),
+              let wakeMin = parseHHMM(wakeup) else { return isoWeekday(for: date) }
+        let nowMin = minutes(in: date)
+        if bedMin > wakeMin && nowMin < wakeMin,
+           let previousDay = Calendar.current.date(byAdding: .day, value: -1, to: date) {
+            return isoWeekday(for: previousDay)
+        }
+        return isoWeekday(for: date)
+    }
+
+    static func wouldLockNow(bedtime: String, wakeup: String, days: [String], date: Date = Date()) -> Bool {
+        guard isInLockWindow(bedtime: bedtime, wakeup: wakeup, date: date) else { return false }
+        let weekday = activeWeekdayForLockWindow(bedtime: bedtime, wakeup: wakeup, date: date)
+        return Set(days).contains(String(weekday))
+    }
+
 }
 
 // MARK: - ConfigManager
@@ -84,6 +158,7 @@ class ConfigManager: ObservableObject {
 
     @Published var config = CatBedtimeConfig.defaultConfig
     @Published var tonightPostponedBedtime: String?
+    private(set) var migratedDefaultWinddown = false
 
     private let agentLabel = "com.timetosleep.daemon"
     private var plistPath: String {
@@ -108,6 +183,14 @@ class ConfigManager: ObservableObject {
         guard let data = try? Data(contentsOf: configURL),
               let cfg = try? JSONDecoder().decode(CatBedtimeConfig.self, from: data) else { return }
         config = cfg
+        migrateDefaultWinddownIfNeeded()
+    }
+
+    private func migrateDefaultWinddownIfNeeded() {
+        guard config.winddown_minutes == 15 else { return }
+        config.winddown_minutes = ProductDefaults.winddownMinutes
+        migratedDefaultWinddown = true
+        saveConfig()
     }
 
     func saveConfig() {
@@ -126,7 +209,7 @@ class ConfigManager: ObservableObject {
         saveConfig()
         markOnboardingCompleteForCurrentInstall()
         initStats()
-        installSchedule()
+        installSchedule(bedtimeForSchedule: effectiveBedtimeTonight())
         NotificationScheduler.shared.requestPermission()
         NotificationScheduler.shared.clearPendingReminders()
     }
@@ -159,6 +242,11 @@ class ConfigManager: ObservableObject {
         NotificationScheduler.shared.clearPendingReminders()
     }
 
+    func restoreScheduleForAppLaunch() {
+        guard shouldShowDashboardOnLaunch else { return }
+        installSchedule(bedtimeForSchedule: effectiveBedtimeTonight())
+    }
+
     // MARK: Postpone tonight
 
     func effectiveBedtimeTonight() -> String {
@@ -178,21 +266,38 @@ class ConfigManager: ObservableObject {
         guard delayMinutes > 0,
               let baseMin = minutes(from: effectiveBedtimeTonight()) else { return nil }
 
-        ensureDir()
         let newMin = (baseMin + delayMinutes) % 1440
-        let newBedtime = formatMinutes(newMin)
+        let newBedtime = ScheduleRules.formatMinutes(newMin)
+        return setTonightBedtime(newBedtime, reason: reason) ? newBedtime : nil
+    }
 
+    func bedtimeByPostponingTonight(minutes delayMinutes: Int) -> String? {
+        guard delayMinutes > 0,
+              let baseMin = minutes(from: effectiveBedtimeTonight()) else { return nil }
+        return ScheduleRules.formatMinutes((baseMin + delayMinutes) % 1440)
+    }
+
+    func canUseBedtime(_ bedtime: String) -> Bool {
+        ScheduleRules.isAllowedLockDuration(bedtime: bedtime, wakeup: config.wakeup)
+    }
+
+    @discardableResult
+    func setTonightBedtime(_ bedtime: String, reason: String, reschedule: Bool = true) -> Bool {
+        guard canUseBedtime(bedtime) else { return false }
+        ensureDir()
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
         let today = fmt.string(from: Date())
-        let content = "\(today)\n\(newBedtime)\n\(reason)\n"
+        let content = "\(today)\n\(bedtime)\n\(reason)\n"
         try? content.write(to: postponeURL, atomically: true, encoding: .utf8)
 
-        tonightPostponedBedtime = newBedtime
-        DispatchQueue.global(qos: .utility).async { [self] in
-            installSchedule(bedtimeForSchedule: newBedtime)
+        tonightPostponedBedtime = bedtime
+        if reschedule {
+            DispatchQueue.global(qos: .utility).async { [self] in
+                installSchedule(bedtimeForSchedule: bedtime)
+            }
         }
-        return newBedtime
+        return true
     }
 
     private func readPostponeTonight() -> (bedtime: String, reason: String)? {
@@ -223,11 +328,6 @@ class ConfigManager: ObservableObject {
 
         try? FileManager.default.removeItem(at: postponeURL)
         return true
-    }
-
-    private func formatMinutes(_ totalMin: Int) -> String {
-        let normalized = ((totalMin % 1440) + 1440) % 1440
-        return String(format: "%02d:%02d", normalized / 60, normalized % 60)
     }
 
     // MARK: Stats
@@ -318,6 +418,16 @@ class ConfigManager: ObservableObject {
         try? FileManager.default.removeItem(atPath: legacyPlist)
         // bootstrap new
         shellRun("/bin/launchctl", ["bootstrap", gui, plistPath])
+    }
+
+    func pauseScheduleForAppQuit() {
+        let gui = "gui/\(getuid())"
+        shellRun("/bin/launchctl", ["bootout", "\(gui)/\(agentLabel)"])
+        shellRun("/bin/launchctl", ["bootout", "\(gui)/com.timetosleep.bootcheck"])
+        try? FileManager.default.removeItem(atPath: plistPath)
+        let legacyPlist = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/LaunchAgents/com.timetosleep.bootcheck.plist").path
+        try? FileManager.default.removeItem(atPath: legacyPlist)
     }
 
     // MARK: Helpers
@@ -449,7 +559,11 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler([.banner, .list, .sound])
+        if notification.request.content.threadIdentifier == "cat-bedtime-winddown" {
+            completionHandler([.list])
+        } else {
+            completionHandler([.banner, .list, .sound])
+        }
     }
 }
 
@@ -478,6 +592,23 @@ class NotificationScheduler {
     }
 
     @discardableResult
+    func sendWinddownNotification(title: String, subtitle: String, body: String) -> Bool {
+        guard ensureNotificationAuthorization() else { return false }
+
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.subtitle = subtitle
+        content.body = body
+        content.threadIdentifier = "cat-bedtime-winddown"
+        if #available(macOS 12.0, *) {
+            content.interruptionLevel = .passive
+        }
+
+        let id = "winddown-\(UUID().uuidString)"
+        return deliverNotification(content: content, identifier: id)
+    }
+
+    @discardableResult
     func sendImmediateNotification(title: String, subtitle: String, body: String) -> Bool {
         guard ensureNotificationAuthorization() else { return false }
 
@@ -486,9 +617,14 @@ class NotificationScheduler {
         content.subtitle = subtitle
         content.body = body
         content.sound = .default
-        content.threadIdentifier = "cat-bedtime-winddown"
+        content.threadIdentifier = "cat-bedtime-daemon"
 
         let id = "daemon-\(UUID().uuidString)"
+        return deliverNotification(content: content, identifier: id)
+    }
+
+    @discardableResult
+    private func deliverNotification(content: UNMutableNotificationContent, identifier id: String) -> Bool {
         let request = UNNotificationRequest(identifier: id, content: content, trigger: nil)
         let semaphore = DispatchSemaphore(value: 0)
         var succeeded = true
@@ -550,6 +686,157 @@ class NotificationScheduler {
     }
 }
 
+// MARK: - Bedtime Reminder Toast (strong in-app reminder)
+
+struct BedtimeReminderToastView: View {
+    let minutesUntilLock: Int
+    let canPostpone: Bool
+    let onDismiss: () -> Void
+    let onPostpone: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(L10n.tf("notify.bedtime.title", minutesUntilLock))
+                        .font(Lamp.rounded(17, weight: .bold))
+                        .foregroundColor(Lamp.creamText)
+                }
+                Spacer(minLength: 8)
+                if canPostpone {
+                    Button(L10n.t("notify.bedtime.postpone_5"), action: onPostpone)
+                        .buttonStyle(.plain)
+                        .font(Lamp.rounded(12, weight: .bold))
+                        .foregroundColor(Lamp.nightDeep)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(Lamp.amberMoon)
+                        .cornerRadius(999)
+                }
+            }
+
+            Text(L10n.t("notify.bedtime.body"))
+                .font(Lamp.rounded(13, weight: .medium))
+                .foregroundColor(Lamp.sandMuted)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button(L10n.t("notify.bedtime.ok"), action: onDismiss)
+                .buttonStyle(LampButtonStyle(block: true))
+                .padding(.top, 4)
+        }
+        .padding(20)
+        .frame(width: 390, alignment: .leading)
+        .background(Lamp.nightElevated)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Lamp.borderDefault, lineWidth: 1)
+        )
+    }
+}
+
+final class BedtimeReminderToastRunner: NSObject, NSApplicationDelegate {
+    private let minutesUntilLock: Int
+    private let canPostpone: Bool
+    private var panel: NSPanel?
+    private var autoCloseTimer: Timer?
+
+    init(minutesUntilLock: Int, canPostpone: Bool) {
+        self.minutesUntilLock = minutesUntilLock
+        self.canPostpone = canPostpone
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        presentToast()
+    }
+
+    private func presentToast() {
+        let root = BedtimeReminderToastView(
+            minutesUntilLock: minutesUntilLock,
+            canPostpone: canPostpone
+        ) { [weak self] in
+            self?.finish(exitCode: 0)
+        } onPostpone: { [weak self] in
+            self?.postponeFiveMinutes()
+        }
+
+        let hosting = NSHostingView(rootView: root)
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 410, height: 240),
+            styleMask: [.nonactivatingPanel, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        panel.isFloatingPanel = true
+        panel.level = .floating
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
+        panel.hasShadow = true
+        panel.contentView = hosting
+        panel.center()
+        self.panel = panel
+
+        NSApp.activate(ignoringOtherApps: true)
+        panel.orderFrontRegardless()
+
+        autoCloseTimer = Timer.scheduledTimer(withTimeInterval: 25, repeats: false) { [weak self] _ in
+            self?.finish(exitCode: 0)
+        }
+    }
+
+    private func postponeFiveMinutes() {
+        let mgr = ConfigManager.shared
+        guard let newBedtime = mgr.bedtimeByPostponingTonight(minutes: ProductDefaults.postponeMinutes),
+              mgr.setTonightBedtime(
+                newBedtime,
+                reason: L10n.t("notify.bedtime.postpone_reason"),
+                reschedule: false
+              ) else {
+            finish(exitCode: 1)
+            return
+        }
+        finish(exitCode: 2)
+    }
+
+    private func finish(exitCode: Int32) {
+        autoCloseTimer?.invalidate()
+        panel?.orderOut(nil)
+        NSApp.stop(nil)
+        Darwin.exit(exitCode)
+    }
+}
+
+private enum ToastCommand {
+    private static var toastRunner: BedtimeReminderToastRunner?
+
+    static func exitIfRequested(arguments: [String] = CommandLine.arguments) {
+        let args = Array(arguments.dropFirst())
+        guard let mode = args.first,
+              mode == "--toast-locksoon" || mode == "--toast-bedtime-warning" else { return }
+
+        let minutes: Int
+        if mode == "--toast-bedtime-warning",
+           args.indices.contains(1),
+           let parsed = Int(args[1]),
+           parsed > 0 {
+            minutes = parsed
+        } else {
+            minutes = 1
+        }
+        let canPostpone = mode == "--toast-bedtime-warning" && args.contains("--allow-postpone")
+
+        L10n.prepareForAppLaunch()
+        let app = NSApplication.shared
+        let runner = BedtimeReminderToastRunner(minutesUntilLock: minutes, canPostpone: canPostpone)
+        toastRunner = runner
+        app.delegate = runner
+        app.setActivationPolicy(.accessory)
+        app.run()
+        Darwin.exit(0)
+    }
+}
+
 private enum NotificationCommand {
     static func exitIfRequested(arguments: [String] = CommandLine.arguments) {
         let args = Array(arguments.dropFirst())
@@ -585,11 +872,21 @@ private enum NotificationCommand {
             body = args[3]
         }
 
-        let ok = NotificationScheduler.shared.sendImmediateNotification(
-            title: title,
-            subtitle: subtitle,
-            body: body
-        )
+        let isWinddown = mode == "--notify-l10n" && args.count >= 5 && args[1] == "notify.winddown.title"
+        let ok: Bool
+        if isWinddown {
+            ok = NotificationScheduler.shared.sendWinddownNotification(
+                title: title,
+                subtitle: subtitle,
+                body: body
+            )
+        } else {
+            ok = NotificationScheduler.shared.sendImmediateNotification(
+                title: title,
+                subtitle: subtitle,
+                body: body
+            )
+        }
         Darwin.exit(ok ? 0 : 1)
     }
 }
@@ -817,6 +1114,7 @@ struct ScheduleConfigView: View {
     @Binding var activeDays: Set<String>
     @Binding var bedtime: Date
     @Binding var wakeup: Date
+    @State private var validationError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -873,9 +1171,23 @@ struct ScheduleConfigView: View {
 
             Spacer()
 
+            if let validationError {
+                Text(validationError)
+                    .font(Lamp.rounded(12, weight: .medium))
+                    .foregroundColor(Lamp.clayWarn)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 10)
+            }
+
             Button(L10n.t("config.confirm")) {
                 syncConfigFromPickers()
-                state.screen = .agreement
+                if ScheduleRules.isAllowedLockDuration(bedtime: mgr.config.bedtime, wakeup: mgr.config.wakeup) {
+                    validationError = nil
+                    state.screen = .agreement
+                } else {
+                    validationError = L10n.t("config.error.lock_duration")
+                }
             }
             .buttonStyle(LampButtonStyle(block: true))
             .padding(.top, 8)
@@ -899,13 +1211,18 @@ struct AgreementView: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject var mgr: ConfigManager
     @State private var pledge = ""
-    @State private var attempts = 0
     @State private var message = ""
     @State private var messageColor = Lamp.duskDim
     @State private var inputBorderColor = Lamp.borderDefault
     @State private var shaking = false
-
     private var requiredPhrase: String { L10n.pledgePhrase }
+    private var wouldLockImmediately: Bool {
+        ScheduleRules.wouldLockNow(
+            bedtime: mgr.effectiveBedtimeTonight(),
+            wakeup: mgr.config.wakeup,
+            days: mgr.config.days
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -923,10 +1240,10 @@ struct AgreementView: View {
 
             // Summary card
             VStack(spacing: 0) {
-                summaryRow(icon: "🛏️", label: L10n.t("agreement.sleep"), value: mgr.config.bedtime)
+                summaryRow(icon: "🛏️", label: L10n.t("agreement.sleep"), value: mgr.effectiveBedtimeTonight())
                 summaryRow(icon: "🌅", label: L10n.t("agreement.leave"), value: mgr.config.wakeup)
                 summaryRow(icon: "📅", label: L10n.t("agreement.days"), value: daysDisplayText())
-                summaryRow(icon: "🔔", label: L10n.t("agreement.reminder"), value: L10n.tf("agreement.reminder_value", 15), showBorder: false)
+                summaryRow(icon: "🔔", label: L10n.t("agreement.reminder"), value: L10n.tf("agreement.reminder_value", ProductDefaults.winddownMinutes), showBorder: false)
             }
             .padding(16)
             .background(Lamp.glass1)
@@ -936,6 +1253,12 @@ struct AgreementView: View {
                     .stroke(Lamp.borderDefault, lineWidth: 1)
             )
             .padding(.bottom, 16)
+
+            agreementNotice
+
+            if wouldLockImmediately {
+                immediateLockNotice
+            }
 
             // Pledge
             Text(L10n.ts("agreement.pledge_prompt", requiredPhrase))
@@ -973,6 +1296,9 @@ struct AgreementView: View {
         .padding(.horizontal, 28)
         .padding(.bottom, 28)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onAppear {
+            resizeWindow(width: 420, height: wouldLockImmediately ? 660 : 620)
+        }
     }
 
     private func tryConfirm() {
@@ -985,14 +1311,9 @@ struct AgreementView: View {
                 state.screen = .lockPreview
             }
         } else {
-            attempts += 1
             inputBorderColor = Lamp.clayWarn
             messageColor = Lamp.clayWarn
-            if attempts >= 3 {
-                message = L10n.t("agreement.wrong_final")
-            } else {
-                message = L10n.tf("agreement.wrong_attempts", 3 - attempts)
-            }
+            message = L10n.t("agreement.wrong")
             // shake
             withAnimation(.linear(duration: 0.07).repeatCount(5, autoreverses: true)) {
                 shaking = true
@@ -1006,6 +1327,45 @@ struct AgreementView: View {
 
     private func daysDisplayText() -> String {
         L10n.daysSummary(sorted: mgr.config.days.sorted())
+    }
+
+    private var agreementNotice: some View {
+        HStack(alignment: .center, spacing: 0) {
+            Text(L10n.t("agreement.restart_notice"))
+                .font(Lamp.rounded(12, weight: .medium))
+                .foregroundColor(Lamp.sandMuted)
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Lamp.glass1)
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Lamp.clayWarn.opacity(0.22), lineWidth: 1)
+        )
+        .padding(.bottom, 14)
+    }
+
+    private var immediateLockNotice: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(L10n.t("agreement.immediate_lock_title"))
+                .font(Lamp.rounded(13, weight: .bold))
+                .foregroundColor(Lamp.amberMoon)
+            Text(L10n.t("agreement.immediate_lock_body"))
+                .font(Lamp.rounded(12, weight: .medium))
+                .foregroundColor(Lamp.sandMuted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .background(Lamp.amberMoon.opacity(0.10))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Lamp.amberMoon.opacity(0.24), lineWidth: 1)
+        )
+        .padding(.bottom, 14)
     }
 
     private func summaryRow(icon: String, label: String, value: String, showBorder: Bool = true) -> some View {
@@ -1140,6 +1500,7 @@ struct DashboardView: View {
     @State private var showDelay = false
     @State private var savedNotice = false
     @State private var delayNotice: String?
+    @State private var saveError: String?
     @State private var visiblePostponedBedtime: String?
     @State private var dashboardCardHeight: CGFloat = 0
 
@@ -1205,6 +1566,13 @@ struct DashboardView: View {
 
             // Confirm button
             VStack(spacing: 8) {
+                if let saveError {
+                    Text(saveError)
+                        .font(Lamp.rounded(13, weight: .medium))
+                        .foregroundColor(Lamp.clayWarn)
+                        .multilineTextAlignment(.center)
+                        .transition(.opacity)
+                }
                 if let delayNotice {
                     Text(delayNotice)
                         .font(Lamp.rounded(13, weight: .medium))
@@ -1228,11 +1596,12 @@ struct DashboardView: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .sheet(isPresented: $showDelay) {
+            .sheet(isPresented: $showDelay) {
             DelayPopover(isPresented: $showDelay) { newBedtime in
                 visiblePostponedBedtime = newBedtime
                 withAnimation {
                     delayNotice = L10n.ts("delay.confirmed", newBedtime)
+                    saveError = nil
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                     withAnimation { delayNotice = nil }
@@ -1335,11 +1704,24 @@ struct DashboardView: View {
     }
 
     private func saveChanges() {
-        mgr.config.bedtime = formatTime(bedtime)
-        mgr.config.wakeup = formatTime(wakeup)
+        let newBedtime = formatTime(bedtime)
+        let newWakeup = formatTime(wakeup)
+        guard ScheduleRules.isAllowedLockDuration(bedtime: newBedtime, wakeup: newWakeup) else {
+            withAnimation {
+                savedNotice = false
+                saveError = L10n.t("config.error.lock_duration")
+            }
+            return
+        }
+
+        mgr.config.bedtime = newBedtime
+        mgr.config.wakeup = newWakeup
         mgr.config.days = activeDays.sorted()
         mgr.updateConfigAndReschedule()
-        withAnimation { savedNotice = true }
+        withAnimation {
+            saveError = nil
+            savedNotice = true
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             withAnimation { savedNotice = false }
         }
@@ -1395,6 +1777,7 @@ struct DelayPopover: View {
     @State private var showCustom = false
     @State private var isSubmitting = false
     @State private var confirmation: String?
+    @State private var errorMessage: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -1483,11 +1866,21 @@ struct DelayPopover: View {
                     .padding(.top, 12)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(Lamp.rounded(13, weight: .semibold))
+                    .foregroundColor(Lamp.clayWarn)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 12)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
         .padding(24)
         .frame(width: 340)
         .background(Lamp.nightElevated)
         .animation(.easeInOut(duration: 0.18), value: confirmation)
+        .animation(.easeInOut(duration: 0.18), value: errorMessage)
     }
 
     private func delayOption(_ label: String, minutes: Int) -> some View {
@@ -1530,11 +1923,21 @@ struct DelayPopover: View {
         }
         if minutes <= 0 { minutes = 30 }
 
+        guard let candidateBedtime = mgr.bedtimeByPostponingTonight(minutes: minutes),
+              mgr.canUseBedtime(candidateBedtime) else {
+            withAnimation {
+                confirmation = nil
+                errorMessage = L10n.t("delay.lock_too_long")
+            }
+            return
+        }
+
         let reasonText = reason.isEmpty ? L10n.tf("delay.default_reason", minutes) : reason
         guard let newBedtime = mgr.postponeTonight(minutes: minutes, reason: reasonText) else { return }
 
         withAnimation {
             isSubmitting = true
+            errorMessage = nil
             confirmation = L10n.ts("delay.confirmed", newBedtime)
         }
         onConfirmed?(newBedtime)
@@ -1684,6 +2087,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if mgr.shouldShowDashboardOnLaunch {
             NotificationScheduler.shared.clearPendingReminders()
         }
+        if mgr.shouldShowDashboardOnLaunch {
+            mgr.restoreScheduleForAppLaunch()
+        }
         let isDashboard = mgr.shouldShowDashboardOnLaunch
         let initialWidth: CGFloat = isDashboard ? 520 : 420
         let initialHeight: CGFloat = isDashboard ? 600 : 560
@@ -1743,6 +2149,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if let commandWMonitor {
             NSEvent.removeMonitor(commandWMonitor)
         }
+        ConfigManager.shared.pauseScheduleForAppQuit()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -1861,6 +2268,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 @main
 enum CatBedtimeMain {
     static func main() {
+        ToastCommand.exitIfRequested()
         NotificationCommand.exitIfRequested()
 
         let delegate = AppDelegate()

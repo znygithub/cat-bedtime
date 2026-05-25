@@ -38,8 +38,8 @@ fi
 
 # winddown must be numeric (default 30 if missing / bad config)
 if ! [[ "${WINDDOWN:-}" =~ ^[0-9]+$ ]] || (( WINDDOWN < 1 )); then
-  log "WARNING: winddown_minutes invalid or empty (${WINDDOWN:-}), using 30"
-  WINDDOWN=30
+  log "WARNING: winddown_minutes invalid or empty (${WINDDOWN:-}), using 5"
+  WINDDOWN=5
 fi
 
 # ── Check for skip ───────────────────────────────────────────────
@@ -102,6 +102,71 @@ notify_native_l10n() {
   fi
   log "native notify sent: $title_key — ${subtitle_key:-∅}"
   return 0
+}
+
+# Strong in-app bedtime reminder. Exit status 2 means user chose +5min.
+toast_bedtime_alert_fallback() {
+  local minutes="$1"
+  local title subtitle body button output status
+  title="$(msg "notify.bedtime.title")"
+  subtitle="$(msg "notify.bedtime.subtitle" "$minutes")"
+  body="$(msg "notify.bedtime.body")"
+  button="$(msg "notify.bedtime.ok")"
+  output=$(
+    osascript -l AppleScript - "$title" "$subtitle" "$body" "$button" <<'APPLESCRIPT' 2>&1
+on run argv
+  set dlgTitle to item 1 of argv
+  set dlgSub to item 2 of argv
+  set dlgBody to item 3 of argv
+  set dlgBtn to item 4 of argv
+  set alertBody to dlgSub & linefeed & linefeed & dlgBody
+  display alert dlgTitle message alertBody as informational buttons {dlgBtn} default button dlgBtn giving up after 12
+end run
+APPLESCRIPT
+  )
+  status=$?
+  if (( status != 0 )); then
+    log "bedtime toast alert fallback failed ($status): $output"
+  else
+    log "bedtime toast alert fallback shown"
+  fi
+  return "$status"
+}
+
+toast_bedtime_alert() {
+  local minutes="$1"
+  local allow_postpone="${2:-0}"
+  local app app_exe status
+  if ! app=$(find_app_notify_bundle); then
+    toast_bedtime_alert_fallback "$minutes"
+    return $?
+  fi
+
+  app_exe="$app/Contents/MacOS/zzz-app"
+  if [ ! -x "$app_exe" ]; then
+    toast_bedtime_alert_fallback "$minutes"
+    return $?
+  fi
+
+  local args=(--toast-bedtime-warning "$minutes")
+  if [ "$allow_postpone" = "1" ]; then
+    args+=(--allow-postpone)
+  fi
+
+  "$app_exe" "${args[@]}"
+  status=$?
+  if (( status == 2 )); then
+    log "bedtime toast postponed by user"
+  elif (( status != 0 )); then
+    log "bedtime toast failed ($status)"
+  else
+    log "bedtime toast shown"
+  fi
+  return "$status"
+}
+
+toast_locksoon() {
+  toast_bedtime_alert 1 0
 }
 
 notify() {
@@ -304,8 +369,23 @@ sleep_until() {
 # Computes wall-clock targets for each stage instead of using sleep(N),
 # so Mac sleep/wake cannot break the timing.
 wind_down() {
-  local total_min=$WINDDOWN
+  local total_min=5
   log "Wind-down phase starting ($total_min minutes until lockdown)"
+
+  local bed_min
+  bed_min=$(time_to_minutes "$BEDTIME")
+  local first_alert_at=$(( bed_min - total_min ))
+  (( first_alert_at < 0 )) && (( first_alert_at += 1440 ))
+
+  local pre_alert_min
+  pre_alert_min=$(minutes_until "$BEDTIME")
+  if (( pre_alert_min > total_min && pre_alert_min < 720 )); then
+    sleep_until "$(minutes_to_time $first_alert_at)"
+    if _overslept; then
+      log "Mac woke after bedtime window; aborting wind-down."
+      return 1
+    fi
+  fi
 
   local notify_min
   notify_min=$(minutes_until "$BEDTIME")
@@ -313,13 +393,9 @@ wind_down() {
     notify_min=$total_min
   fi
 
-  # First reminder: wind-down start (= "提前 N 分钟"，常见为 30 分钟)
-  notify \
-    "notify.winddown.title" \
-    "notify.winddown.subtitle" \
-    "$notify_min" \
-    "notify.winddown.body" \
-    "notify.winddown.button"
+  # First reminder: wind-down start (= "提前 5 分钟"). This is an
+  # in-app modal-style toast instead of Notification Center delivery.
+  toast_bedtime_alert "$notify_min" 0 || true
 
   if ! is_active_winddown_day; then
     log "Reminder sent; wind-down belongs to inactive weekday ($(active_weekday_for_winddown)), skipping lockdown."
@@ -329,9 +405,6 @@ wind_down() {
   # Save current state for later restore
   brightness_save
   media_save_volume
-
-  local bed_min
-  bed_min=$(time_to_minutes "$BEDTIME")
 
   # Wall-clock targets for each stage
   local stage2_at=$(( bed_min - total_min * 2 / 3 ))
@@ -349,7 +422,7 @@ wind_down() {
   fi
 
   # Stage 2 and stage 3 used to send popups too, but per product feedback
-  # users only get two notifications: T-15min (above) and T-1min (below).
+  # users now get a strong T-5min toast and a final T-1min toast.
   # Brightness and volume still taper here so the room "matches" the cat's
   # mood — just without interrupting with another modal sheet.
   local remaining
@@ -369,21 +442,30 @@ wind_down() {
   media_fade_volume 50 &
   brightness_fade_to 0.3 10 &
 
-  # 1-minute warning before bedtime
+  # T-1min mandatory in-app Toast. The first T-1min warning may postpone once.
   local m
   m=$(minutes_until "$BEDTIME")
-  if (( m > 1 && m < 720 )); then
+  if (( m >= 1 && m < 720 )); then
     sleep_until "$(minutes_to_time $warn_at)"
     if _overslept; then
       log "Mac woke after bedtime window; aborting wind-down."
       brightness_restore; media_restore_volume; return 1
     fi
-    notify \
-      "notify.locksoon.title" \
-      "notify.locksoon.subtitle" \
-      "-" \
-      "notify.locksoon.body" \
-      "notify.locksoon.button"
+    toast_bedtime_alert 1 1
+    local toast_status=$?
+    if (( toast_status == 2 )); then
+      BEDTIME=$(effective_bedtime)
+      log "Bedtime postponed once; new bedtime: $BEDTIME"
+      bed_min=$(time_to_minutes "$BEDTIME")
+      warn_at=$(( bed_min - 1 ))
+      (( warn_at < 0 )) && (( warn_at += 1440 ))
+      sleep_until "$(minutes_to_time $warn_at)"
+      if _overslept; then
+        log "Mac woke after postponed bedtime window; aborting wind-down."
+        brightness_restore; media_restore_volume; return 1
+      fi
+      toast_bedtime_alert 1 0 || true
+    fi
   fi
 
   # Final wait until exact bedtime
@@ -467,6 +549,12 @@ wake_up() {
 }
 
 # ── Main sequence ────────────────────────────────────────────────
+if ! lock_duration_allowed_for_times "$BEDTIME" "$WAKEUP"; then
+  duration=$(lock_duration_minutes_for_times "$BEDTIME" "$WAKEUP")
+  log "ERROR: lock window is ${duration}min; must be less than ${MAX_LOCK_MINUTES}min."
+  exit 1
+fi
+
 phase=$(current_phase)
 case "$phase" in
   winddown)

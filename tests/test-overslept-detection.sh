@@ -50,7 +50,7 @@ echo ""
 # During wind-down (22:30 ~ 23:00) → NOT overslept
 assert 1350 "false" "22:30 (wind-down start)"
 assert 1370 "false" "22:50 (mid wind-down)"
-assert 1379 "false" "22:59 (1 min before bed)"
+assert 1378 "false" "22:58 (2 min before bed)"
 
 # During lockdown (23:00 ~ 07:00) → NOT overslept
 assert 1380 "false" "23:00 (bedtime)"
@@ -78,7 +78,7 @@ stage2_at=$(( bed_min - WINDDOWN * 2 / 3 ))
 stage3_at=$(( bed_min - WINDDOWN / 3 ))
 (( stage3_at < 0 )) && (( stage3_at += 1440 ))
 warn_at=$(( bed_min - 1 ))
-(( warn_at < 0 )) && (( warn_at += 1440 ))
+  (( warn_at < 0 )) && (( warn_at += 1440 ))
 
 s2_time=$(minutes_to_time $stage2_at)
 s3_time=$(minutes_to_time $stage3_at)
@@ -97,7 +97,7 @@ check_target() {
 
 check_target "$s2_time" "22:40" "stage2"
 check_target "$s3_time" "22:50" "stage3"
-check_target "$w_time"  "22:59" "1-min warning"
+check_target "$w_time"  "22:59" "1-min toast"
 
 echo ""
 

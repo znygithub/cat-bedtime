@@ -4,6 +4,7 @@
 ZZZ_DIR="$HOME/.timetosleep"
 ZZZ_CONFIG="$ZZZ_DIR/config.json"
 ZZZ_STATS="$ZZZ_DIR/stats.json"
+MAX_LOCK_MINUTES=900
 
 config_ensure_dir() {
   mkdir -p "$ZZZ_DIR"
@@ -108,6 +109,22 @@ time_to_minutes() {
 
 minutes_to_time() {
   printf "%02d:%02d" $(( $1 / 60 )) $(( $1 % 60 ))
+}
+
+lock_duration_minutes_for_times() {
+  local bedtime="$1" wakeup="$2"
+  local bed_min wake_min diff
+  bed_min=$(time_to_minutes "$bedtime")
+  wake_min=$(time_to_minutes "$wakeup")
+  diff=$(( wake_min - bed_min ))
+  (( diff <= 0 )) && (( diff += 1440 ))
+  echo "$diff"
+}
+
+lock_duration_allowed_for_times() {
+  local duration
+  duration=$(lock_duration_minutes_for_times "$1" "$2")
+  (( duration > 0 && duration < MAX_LOCK_MINUTES ))
 }
 
 now_minutes() {

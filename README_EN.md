@@ -135,9 +135,10 @@ See [CHANGELOG.md](CHANGELOG.md) for version history. Installers are on [Release
 
 | Doc | Purpose |
 | --- | --- |
-| [CHANGELOG.md](CHANGELOG.md) | Version history |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture |
-| [PITFALLS.md](PITFALLS.md) | Known pitfalls |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Code layout, runtime data, flows, tests |
+| [docs/core-beliefs.md](docs/core-beliefs.md) | Product principles and boundaries |
+| [docs/product-specs/](docs/product-specs/index.md) | Feature requirements by module |
+| [docs/tech-docs/](docs/tech-docs/index.md) | Technical design and data contracts |
 
 ---
 

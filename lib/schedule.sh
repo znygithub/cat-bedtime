@@ -32,7 +32,7 @@ _winddown_start() {
   local winddown
   winddown=$(config_get "winddown_minutes")
   if ! [[ "${winddown:-}" =~ ^[0-9]+$ ]] || (( winddown < 1 )); then
-    winddown=30
+    winddown=5
   fi
   local bed_min
   bed_min=$(time_to_minutes "$bedtime")
@@ -101,7 +101,7 @@ _should_kickstart_now() {
   wakeup=$(config_get "wakeup")
   winddown=$(config_get "winddown_minutes")
   if ! [[ "${winddown:-}" =~ ^[0-9]+$ ]] || (( winddown < 1 )); then
-    winddown=30
+    winddown=5
   fi
 
   local now_min bed_min wake_min start_min weekday
@@ -116,6 +116,18 @@ _should_kickstart_now() {
 }
 
 schedule_install() {
+  local bedtime wakeup
+  bedtime=$(effective_bedtime)
+  wakeup=$(config_get "wakeup")
+  if [ -z "$bedtime" ] || [ -z "$wakeup" ]; then
+    echo "Cat Bedtime: missing bedtime or wake-up time." >&2
+    return 1
+  fi
+  if ! lock_duration_allowed_for_times "$bedtime" "$wakeup"; then
+    echo "Cat Bedtime: lock duration must be less than 15 hours." >&2
+    return 1
+  fi
+
   local daemon_path
   daemon_path=$(_script_path "daemon.sh")
   local start_time
