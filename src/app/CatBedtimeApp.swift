@@ -42,6 +42,7 @@ enum Lamp {
 enum ProductDefaults {
     static let winddownMinutes = 5
     static let postponeMinutes = 5
+    static let immediateDelayMinutes = 15
 }
 
 // MARK: - Config Model
@@ -152,6 +153,9 @@ class ConfigManager: ObservableObject {
     private var postponeURL: URL {
         zzzDir.appendingPathComponent("postpone_tonight")
     }
+    private var forceURL: URL {
+        zzzDir.appendingPathComponent("force_tonight")
+    }
     private var onboardingInstallURL: URL {
         zzzDir.appendingPathComponent("onboarding_install_id")
     }
@@ -201,7 +205,7 @@ class ConfigManager: ObservableObject {
         try? data.write(to: configURL, options: .atomic)
     }
 
-    func activateOnboarding() {
+    func activateOnboarding(installSchedule shouldInstallSchedule: Bool = true) {
         let fmt = ISO8601DateFormatter()
         fmt.formatOptions = [.withInternetDateTime]
         config.activated_at = fmt.string(from: Date())
@@ -209,7 +213,9 @@ class ConfigManager: ObservableObject {
         saveConfig()
         markOnboardingCompleteForCurrentInstall()
         initStats()
-        installSchedule(bedtimeForSchedule: effectiveBedtimeTonight())
+        if shouldInstallSchedule {
+            installSchedule(bedtimeForSchedule: effectiveBedtimeTonight())
+        }
         NotificationScheduler.shared.requestPermission()
         NotificationScheduler.shared.clearPendingReminders()
     }
@@ -244,7 +250,24 @@ class ConfigManager: ObservableObject {
 
     func restoreScheduleForAppLaunch() {
         guard shouldShowDashboardOnLaunch else { return }
+        if shouldAskLockDecisionNow {
+            pauseScheduleForLockDecision()
+            return
+        }
         installSchedule(bedtimeForSchedule: effectiveBedtimeTonight())
+    }
+
+    var shouldAskLockDecisionNow: Bool {
+        shouldShowDashboardOnLaunch && wouldLockImmediately()
+    }
+
+    func wouldLockImmediately(date: Date = Date()) -> Bool {
+        ScheduleRules.wouldLockNow(
+            bedtime: effectiveBedtimeTonight(),
+            wakeup: config.wakeup,
+            days: config.days,
+            date: date
+        )
     }
 
     // MARK: Postpone tonight
@@ -277,6 +300,11 @@ class ConfigManager: ObservableObject {
         return ScheduleRules.formatMinutes((baseMin + delayMinutes) % 1440)
     }
 
+    func bedtimeByDelayingFromNow(minutes delayMinutes: Int) -> String? {
+        guard delayMinutes > 0 else { return nil }
+        return ScheduleRules.formatMinutes(ScheduleRules.minutes() + delayMinutes)
+    }
+
     func canUseBedtime(_ bedtime: String) -> Bool {
         ScheduleRules.isAllowedLockDuration(bedtime: bedtime, wakeup: config.wakeup)
     }
@@ -297,6 +325,21 @@ class ConfigManager: ObservableObject {
                 installSchedule(bedtimeForSchedule: bedtime)
             }
         }
+        return true
+    }
+
+    @discardableResult
+    func postponeTonightFromNow(minutes delayMinutes: Int, reason: String) -> String? {
+        guard let newBedtime = bedtimeByDelayingFromNow(minutes: delayMinutes),
+              setTonightBedtime(newBedtime, reason: reason) else { return nil }
+        writeForceTonight(reason: reason)
+        return newBedtime
+    }
+
+    @discardableResult
+    func skipTonightFromLockChoice(reason: String) -> Bool {
+        writeSkipTonight(reason: reason)
+        installSchedule(bedtimeForSchedule: config.bedtime)
         return true
     }
 
@@ -351,6 +394,15 @@ class ConfigManager: ObservableObject {
         let today = fmt.string(from: Date())
         let content = "\(today)\n\(reason)\n"
         try? content.write(to: skipURL, atomically: true, encoding: .utf8)
+    }
+
+    func writeForceTonight(reason: String) {
+        ensureDir()
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        let today = fmt.string(from: Date())
+        let content = "\(today)\n\(reason)\n"
+        try? content.write(to: forceURL, atomically: true, encoding: .utf8)
     }
 
     // MARK: launchd schedule
@@ -421,6 +473,10 @@ class ConfigManager: ObservableObject {
     }
 
     func pauseScheduleForAppQuit() {
+        pauseScheduleForLockDecision()
+    }
+
+    func pauseScheduleForLockDecision() {
         let gui = "gui/\(getuid())"
         shellRun("/bin/launchctl", ["bootout", "\(gui)/\(agentLabel)"])
         shellRun("/bin/launchctl", ["bootout", "\(gui)/com.timetosleep.bootcheck"])
@@ -833,6 +889,123 @@ private enum ToastCommand {
         app.delegate = runner
         app.setActivationPolicy(.accessory)
         app.run()
+        Darwin.exit(0)
+    }
+}
+
+private enum AppVisibilityCommand {
+    static func exitIfRequested(arguments: [String] = CommandLine.arguments) {
+        let args = Array(arguments.dropFirst())
+        guard args.first == "--hide-running-app" else { return }
+
+        for app in NSRunningApplication.runningApplications(withBundleIdentifier: "com.timetosleep.app")
+        where app.processIdentifier != getpid() {
+            app.hide()
+        }
+        Darwin.exit(0)
+    }
+}
+
+private enum LockChoicePopup {
+    static func present(mgr: ConfigManager, previewMode: Bool = false) -> Bool {
+        var result = false
+        var panel: NSPanel?
+        let app = NSApplication.shared
+        let root = LockChoicePanelView(
+            bedtime: mgr.effectiveBedtimeTonight(),
+            wakeup: mgr.config.wakeup,
+            previewMode: previewMode,
+            onDelay: {
+                if !previewMode {
+                    result = mgr.postponeTonightFromNow(
+                        minutes: ProductDefaults.immediateDelayMinutes,
+                        reason: L10n.t("lock_choice.delay_reason")
+                    ) != nil
+                }
+                panel?.orderOut(nil)
+                app.stopModal()
+            },
+            onTomorrow: {
+                if !previewMode {
+                    result = mgr.skipTonightFromLockChoice(reason: L10n.t("lock_choice.tomorrow_reason"))
+                }
+                panel?.orderOut(nil)
+                app.stopModal()
+            }
+        )
+
+        let hosting = NSHostingView(rootView: root)
+        let popup = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 360, height: 210),
+            styleMask: [.nonactivatingPanel, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        popup.isFloatingPanel = true
+        popup.level = .modalPanel
+        popup.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        popup.backgroundColor = .clear
+        popup.isOpaque = false
+        popup.hasShadow = true
+        popup.contentView = hosting
+        popup.center()
+        panel = popup
+
+        app.activate(ignoringOtherApps: true)
+        popup.orderFrontRegardless()
+        app.runModal(for: popup)
+        return result
+    }
+}
+
+struct LockChoicePanelView: View {
+    let bedtime: String
+    let wakeup: String
+    let previewMode: Bool
+    let onDelay: () -> Void
+    let onTomorrow: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(L10n.t("lock_choice.title"))
+                .font(Lamp.rounded(17, weight: .bold))
+                .foregroundColor(Lamp.creamText)
+
+            Text(L10n.ts("lock_choice.body", bedtime, wakeup))
+                .font(Lamp.rounded(13, weight: .medium))
+                .foregroundColor(Lamp.sandMuted)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 10) {
+                Button(L10n.t("lock_choice.tomorrow"), action: onTomorrow)
+                    .buttonStyle(GhostButtonStyle())
+
+                Button(L10n.tf("lock_choice.delay", ProductDefaults.immediateDelayMinutes), action: onDelay)
+                    .buttonStyle(LampButtonStyle(block: true))
+            }
+            .padding(.top, 4)
+        }
+        .padding(20)
+        .frame(width: 360, alignment: .leading)
+        .background(Lamp.nightElevated)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Lamp.borderDefault, lineWidth: 1)
+        )
+    }
+}
+
+private enum PreviewCommand {
+    static func exitIfRequested(arguments: [String] = CommandLine.arguments) {
+        let args = Array(arguments.dropFirst())
+        guard args.first == "--preview-lock-choice" else { return }
+
+        L10n.prepareForAppLaunch()
+        let app = NSApplication.shared
+        app.setActivationPolicy(.regular)
+        app.activate(ignoringOtherApps: true)
+        _ = LockChoicePopup.present(mgr: ConfigManager.shared, previewMode: true)
         Darwin.exit(0)
     }
 }
@@ -1307,8 +1480,16 @@ struct AgreementView: View {
             message = L10n.t("agreement.confirmed")
             messageColor = Lamp.sageOk
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                mgr.activateOnboarding()
-                state.screen = .lockPreview
+                let needsLockChoice = mgr.wouldLockImmediately()
+                mgr.activateOnboarding(installSchedule: !needsLockChoice)
+                if needsLockChoice {
+                    if LockChoicePopup.present(mgr: mgr) {
+                        state.screen = .dashboard
+                        resizeWindow(width: 520, height: 600, center: true)
+                    }
+                } else {
+                    state.screen = .lockPreview
+                }
             }
         } else {
             inputBorderColor = Lamp.clayWarn
@@ -2024,11 +2205,11 @@ func formatTime(_ date: Date) -> String {
     return String(format: "%02d:%02d", h, m)
 }
 
-func resizeWindow(width: CGFloat, height: CGFloat) {
+func resizeWindow(width: CGFloat, height: CGFloat, center: Bool = false) {
     DispatchQueue.main.async {
         WindowSizeStore.shared.size = CGSize(width: width, height: height)
         guard let window = NSApplication.shared.windows.first else { return }
-        lockWindowContentSize(window, width: width, height: height, center: false, animated: false)
+        lockWindowContentSize(window, width: width, height: height, center: center, animated: false)
     }
 }
 
@@ -2090,6 +2271,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if mgr.shouldShowDashboardOnLaunch {
             mgr.restoreScheduleForAppLaunch()
         }
+        let needsLockChoice = mgr.shouldAskLockDecisionNow
         let isDashboard = mgr.shouldShowDashboardOnLaunch
         let initialWidth: CGFloat = isDashboard ? 520 : 420
         let initialHeight: CGFloat = isDashboard ? 600 : 560
@@ -2121,7 +2303,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.contentView = hostingView
         window.isReleasedWhenClosed = false
         lockWindowContentSize(window, width: initialWidth, height: initialHeight, center: true, animated: false)
-        window.makeKeyAndOrderFront(nil)
+        if !needsLockChoice {
+            window.makeKeyAndOrderFront(nil)
+        }
         DispatchQueue.main.async {
             lockWindowContentSize(self.window, width: initialWidth, height: initialHeight, center: true, animated: false)
         }
@@ -2135,6 +2319,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             object: nil
         )
         installCommandWMonitor()
+
+        if needsLockChoice {
+            DispatchQueue.main.async {
+                if LockChoicePopup.present(mgr: mgr) {
+                    self.showMainWindow()
+                }
+            }
+        }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -2268,6 +2460,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 @main
 enum CatBedtimeMain {
     static func main() {
+        AppVisibilityCommand.exitIfRequested()
+        PreviewCommand.exitIfRequested()
         ToastCommand.exitIfRequested()
         NotificationCommand.exitIfRequested()
 

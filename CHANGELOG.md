@@ -6,6 +6,20 @@
 
 ---
 
+## [v1.1.1](https://github.com/znygithub/cat-bedtime/releases/tag/v1.1.1) — 2026-05-26
+
+### 修复
+- App 退出后不再继续触发睡前提醒或锁屏流程。
+- 修复提前 1 分钟提醒缺失的问题。
+- 打开 App 或刚完成 onboarding 时，如果已经过了睡觉时间，先弹出紧凑确认弹窗，可选择「15 分钟后锁屏」或「明天再说」。
+- 早晨自然解除锁屏后不再保留 App 界面，改为在通知中心提示猫猫睡得很好，并显示来到家里的天数。
+
+### 改进
+- 过点确认弹窗改为和睡前弹窗一致的紧凑样式。
+- 移除过点确认弹窗里的安全预览说明文案。
+
+---
+
 ## [v1.1.0](https://github.com/znygithub/cat-bedtime/releases/tag/v1.1.0) — 2026-05-20
 
 ### 新增
@@ -48,4 +62,4 @@
 
 ---
 
-[Unreleased]: https://github.com/znygithub/cat-bedtime/compare/v1.1.0...main
+[Unreleased]: https://github.com/znygithub/cat-bedtime/compare/v1.1.1...main

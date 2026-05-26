@@ -20,6 +20,7 @@ WINDDOWN=$(config_get "winddown_minutes")
 MESSAGE=$(config_get "message")
 
 POSTPONE_FILE="$ZZZ_DIR/postpone_tonight"
+FORCE_FILE="$ZZZ_DIR/force_tonight"
 if [ -f "$POSTPONE_FILE" ]; then
   postpone_date=$(head -n 1 "$POSTPONE_FILE" 2>/dev/null || true)
   postpone_bed=$(sed -n '2p' "$POSTPONE_FILE" 2>/dev/null || true)
@@ -60,6 +61,18 @@ if [ -f "$SKIP_FILE" ]; then
   fi
   rm -f "$SKIP_FILE"
 fi
+
+is_forced_tonight() {
+  [ -f "$FORCE_FILE" ] || return 1
+  local force_date today
+  force_date=$(head -n 1 "$FORCE_FILE" 2>/dev/null || true)
+  today=$(date +%Y-%m-%d)
+  if [ "$force_date" = "$today" ]; then
+    return 0
+  fi
+  [ -n "$force_date" ] && rm -f "$FORCE_FILE"
+  return 1
+}
 
 log "Starting wind-down sequence. Bedtime: $BEDTIME, Wake: $WAKEUP, Winddown: ${WINDDOWN}min"
 
@@ -167,6 +180,14 @@ toast_bedtime_alert() {
 
 toast_locksoon() {
   toast_bedtime_alert 1 0
+}
+
+hide_running_app() {
+  local app app_exe
+  app=$(find_app_notify_bundle) || return 0
+  app_exe="$app/Contents/MacOS/zzz-app"
+  [ -x "$app_exe" ] || return 0
+  "$app_exe" --hide-running-app >/dev/null 2>&1 || true
 }
 
 notify() {
@@ -397,7 +418,7 @@ wind_down() {
   # in-app modal-style toast instead of Notification Center delivery.
   toast_bedtime_alert "$notify_min" 0 || true
 
-  if ! is_active_winddown_day; then
+  if ! is_active_winddown_day && ! is_forced_tonight; then
     log "Reminder sent; wind-down belongs to inactive weekday ($(active_weekday_for_winddown)), skipping lockdown."
     return 2
   fi
@@ -483,6 +504,10 @@ lockdown() {
   local today
   today=$(date +%Y-%m-%d)
 
+  # If the settings App was open before bedtime, keep it out of the way for
+  # the morning; wake-up is announced through Notification Center instead.
+  hide_running_app
+
   # Pause all media
   media_pause_all
   media_mute
@@ -528,6 +553,32 @@ lockdown() {
   stats_record "$today" "completed"
 }
 
+notify_wakeup_summary() {
+  local visits
+  visits=$(stats_completed_count 2>/dev/null || echo "")
+  if [[ "$visits" =~ ^[0-9]+$ ]] && (( visits > 0 )); then
+    notify_native_l10n \
+      "notify.wakeup.title" \
+      "notify.wakeup.subtitle" \
+      "$visits" \
+      "notify.wakeup.body" || true
+  fi
+}
+
+restore_schedule_after_temporary_bedtime() {
+  if [ ! -f "$POSTPONE_FILE" ] && [ ! -f "$FORCE_FILE" ]; then
+    return 0
+  fi
+
+  (
+    sleep 2
+    rm -f "$POSTPONE_FILE" "$FORCE_FILE"
+    # The current daemon may still be exiting; reload launchd after it is gone.
+    source "$ROOT_DIR/lib/schedule.sh"
+    schedule_install >/dev/null 2>&1 || true
+  ) >/dev/null 2>&1 &
+}
+
 # ── PHASE 3: Wake up ────────────────────────────────────────────
 wake_up() {
   log "Good morning! Restoring system."
@@ -541,9 +592,9 @@ wake_up() {
   # Disable Do Not Disturb
   shortcuts run "Turn Off Focus" 2>/dev/null || true
 
-  # No wake-up popup: at this point the overlay has already exited, the user
-  # is either still asleep or just opened the lid — neither moment benefits
-  # from a modal sheet. Brightness/volume are silently restored above.
+  # Morning uses Notification Center instead of surfacing the settings window.
+  notify_wakeup_summary
+  restore_schedule_after_temporary_bedtime
 
   log "Daemon complete."
 }
@@ -558,7 +609,7 @@ fi
 phase=$(current_phase)
 case "$phase" in
   winddown)
-    if ! is_active_winddown_day; then
+    if ! is_active_winddown_day && ! is_forced_tonight; then
       log "Current wind-down belongs to inactive weekday ($(active_weekday_for_winddown)); exiting."
       exit 0
     fi
@@ -579,7 +630,7 @@ case "$phase" in
     esac
     ;;
   lockdown)
-    if ! is_active_lockdown_day; then
+    if ! is_active_lockdown_day && ! is_forced_tonight; then
       log "Current lock window belongs to inactive weekday ($(active_weekday_for_lockdown)); exiting."
       exit 0
     fi

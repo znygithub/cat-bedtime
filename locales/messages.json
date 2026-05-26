@@ -484,6 +484,48 @@
       "ja": "ロックが長すぎます。15 時間未満にしてください。",
       "ko": "너무 오래 잠겨요. 잠금 시간은 15시간 미만이어야 해요."
     },
+    "lock_choice.title": {
+      "zh-Hans": "已经过了猫猫睡觉时间",
+      "zh-Hant": "已經過了貓貓睡覺時間",
+      "en": "Cat bedtime has passed",
+      "ja": "ねこの就寝時刻を過ぎています",
+      "ko": "고양이 취침 시간이 지났어요"
+    },
+    "lock_choice.body": {
+      "zh-Hans": "原定 %@ 睡觉，%@ 起床。",
+      "zh-Hant": "原定 %@ 睡覺，%@ 起床。",
+      "en": "Bedtime was %@ and wake-up is %@.",
+      "ja": "就寝は %@、起床は %@ の予定でした。",
+      "ko": "취침은 %@, 기상은 %@ 예정이었어요."
+    },
+    "lock_choice.delay": {
+      "zh-Hans": "%d 分钟后锁屏",
+      "zh-Hant": "%d 分鐘後鎖屏",
+      "en": "Lock in %d min",
+      "ja": "%d 分後にロック",
+      "ko": "%d분 뒤 잠금"
+    },
+    "lock_choice.tomorrow": {
+      "zh-Hans": "明天再说",
+      "zh-Hant": "明天再說",
+      "en": "Tomorrow",
+      "ja": "明日にする",
+      "ko": "내일로"
+    },
+    "lock_choice.delay_reason": {
+      "zh-Hans": "过点后选择 15 分钟后锁屏",
+      "zh-Hant": "過點後選擇 15 分鐘後鎖屏",
+      "en": "Chose to lock 15 min after bedtime prompt",
+      "ja": "就寝時刻後に 15 分後のロックを選択",
+      "ko": "취침 시간이 지난 뒤 15분 뒤 잠금 선택"
+    },
+    "lock_choice.tomorrow_reason": {
+      "zh-Hans": "过点后选择明天再说",
+      "zh-Hant": "過點後選擇明天再說",
+      "en": "Chose tomorrow after bedtime prompt",
+      "ja": "就寝時刻後に明日にするを選択",
+      "ko": "취침 시간이 지난 뒤 내일로 선택"
+    },
     "dashboard.tonight_postponed": {
       "zh-Hans": "今晚最新睡眠时间：%@",
       "zh-Hant": "今晚最新睡眠時間：%@",
@@ -721,6 +763,27 @@
       "en": "Bedtime reminder postponed 5 min",
       "ja": "就寝リマインダーを 5 分延長",
       "ko": "취침 알림 5분 미루기"
+    },
+    "notify.wakeup.title": {
+      "zh-Hans": "猫猫昨晚睡得很好",
+      "zh-Hant": "貓貓昨晚睡得很好",
+      "en": "The cat slept well last night",
+      "ja": "昨夜、ねこはよく眠れました",
+      "ko": "고양이가 어젯밤 잘 잤어요"
+    },
+    "notify.wakeup.subtitle": {
+      "zh-Hans": "这是它来家里的第 %d 天了",
+      "zh-Hant": "這是牠來家裡的第 %d 天了",
+      "en": "Day %d at home",
+      "ja": "この家に来て %d 日目です",
+      "ko": "집에 온 지 %d일째예요"
+    },
+    "notify.wakeup.body": {
+      "zh-Hans": "",
+      "zh-Hant": "",
+      "en": "",
+      "ja": "",
+      "ko": ""
     },
     "cli.not_configured": {
       "zh-Hans": "还没有领养猫猫。运行 zzz init 开始",
