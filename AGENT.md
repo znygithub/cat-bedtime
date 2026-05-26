@@ -1,48 +1,31 @@
-# 文档规范
+这是项目的文件目录，根据你当前的任务，维护和查阅相关有关文档，不需要一口气阅读所有文档
 
-文档结构见 [`.rule.md`](.rule.md)。**`ARCHITECTURE.md` + `docs/`** 是唯一入口。
+当代码做出调整后，也请维护相关文档，保持文档和代码是同步的
 
-## 必读与按需阅读
+Plan和需求文档的区别是，我下的指令应该先进plan，plan是会动态不断变化的，刷新频率高，需求文档是现有项目的现状，刷新频率较低
 
-| 文档 | 何时读 |
-|------|--------|
-| [`docs/core-beliefs.md`](docs/core-beliefs.md) | 首次接触；产品哲学、边界、路线 |
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | 目录结构、运行时数据、全局流程、测试 |
-| [`docs/tech-docs/index.md`](docs/tech-docs/index.md) | 技术索引、代码入口 |
-| [`docs/product-specs/index.md`](docs/product-specs/index.md) | 按模块读需求 |
-| [`docs/RELIABILITY.md`](docs/RELIABILITY.md) | 改 daemon / overlay / CLI 交互前 |
-
-## 文档结构
-
-```text
 ARCHITECTURE.md
 docs/
-├── core-beliefs.md
-├── PRODUCT_SENSE.md
-├── PLANS.md
+├── core-beliefs.md  #产品设计的核心理念
+├── tech-docs/  #技术架构
+│   ├── index.md
+│   └── ...
+├── exec-plans/ # 如果遇到复杂任务，先写Plan，plan中技术方案和产品设计分成两个文件写
+│   ├── active/  #正在执行的
+│   ├── completed/ #已完成的，归档
+│   └── tech-debt-tracker.md 
+├── generated/
+│   └── db-schema.md
+├── product-specs/ #需求文档，详细写明产品的需求内容
+│   ├── index.md
+│   ├── new-user-onboarding.md
+│   └── ...
+├── references/ # 可能会使用的参考资料
+│   └── ...
 ├── DESIGN.md
 ├── FRONTEND.md
+├── FUTURE_Plan.md  #未来可能的改进，由我编写
+├── PRODUCT_SENSE.md
 ├── QUALITY_SCORE.md
 ├── RELIABILITY.md
-├── SECURITY.md
-├── tech-docs/
-├── product-specs/
-├── exec-plans/
-├── generated/
-└── references/
-```
-
-## 维护规则
-
-代码变更后：
-
-1. 更新对应的 `docs/product-specs/` 或 `docs/tech-docs/` 文档
-2. 若影响全局架构或数据契约，同步 `ARCHITECTURE.md`
-3. 若影响产品边界或路线，同步 `docs/core-beliefs.md`、`docs/PLANS.md`
-4. 若影响 UI，同步 `docs/DESIGN.md`、`docs/FRONTEND.md`
-5. 若新增踩坑，写入 `docs/RELIABILITY.md`
-
-## AI 使用提示
-
-- 改代码前：读 `core-beliefs.md` + `ARCHITECTURE.md`，再读目标模块 spec / tech doc
-- 行为描述须与代码一致；有歧义以代码为准
+└── SECURITY.md
