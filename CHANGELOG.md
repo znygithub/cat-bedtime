@@ -6,6 +6,14 @@
 
 ---
 
+## [v1.1.2](https://github.com/znygithub/cat-bedtime/releases/tag/v1.1.2) — 2026-06-14
+
+### 修复
+- README 下载链接更新至 v1.1.2，避开缺少 `cat-bedtime.mov` 的 v1.1.0 DMG。
+- 将锁屏动画 `assets/cat-bedtime.mov` 纳入源码发布，并在 App / CLI 构建时校验缺失素材，避免再次发出缺动画安装包。
+
+---
+
 ## [v1.1.1](https://github.com/znygithub/cat-bedtime/releases/tag/v1.1.1) — 2026-05-26
 
 ### 修复
@@ -62,4 +70,4 @@
 
 ---
 
-[Unreleased]: https://github.com/znygithub/cat-bedtime/compare/v1.1.1...main
+[Unreleased]: https://github.com/znygithub/cat-bedtime/compare/v1.1.2...main

@@ -57,21 +57,21 @@ Scroll to **Assets** (macOS 12+):
 
 | I want | File | Direct link | Best for |
 | --- | --- | --- | --- |
-| **App** (recommended) | `Cat-Bedtime-macOS.dmg` | [Download DMG](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.0/Cat-Bedtime-macOS.dmg) | Normal Mac app with a window |
-| **CLI** | `cat-bedtime-cli-macos.tar.gz` | [Download CLI](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.0/cat-bedtime-cli-macos.tar.gz) | Terminal-only; `zzz` command, no Dock icon |
+| **App** (recommended) | `Cat-Bedtime-macOS.dmg` | [Download DMG](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.2/Cat-Bedtime-macOS.dmg) | Normal Mac app with a window |
+| **CLI** | `cat-bedtime-cli-macos.tar.gz` | [Download CLI](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.2/cat-bedtime-cli-macos.tar.gz) | Terminal-only; `zzz` command, no Dock icon |
 
 **What is `cat-bedtime-cli-macos.tar.gz`?** A compressed archive (like `.zip`). After extracting you get a `cat-bedtime-cli/` folder with `install.sh` — not a `.app`. Most people should use the **DMG**.
 
 ### App edition
 
-1. Download and open [Cat-Bedtime-macOS.dmg](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.0/Cat-Bedtime-macOS.dmg)
+1. Download and open [Cat-Bedtime-macOS.dmg](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.2/Cat-Bedtime-macOS.dmg)
 2. Drag **Cat Bedtime.app** into **Applications**
 3. Launch and complete **cat adoption** on first run
 4. If macOS blocks the app: System Settings → Privacy & Security → Open Anyway
 
 ### CLI edition
 
-1. Download [cat-bedtime-cli-macos.tar.gz](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.0/cat-bedtime-cli-macos.tar.gz) and extract it
+1. Download [cat-bedtime-cli-macos.tar.gz](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.2/cat-bedtime-cli-macos.tar.gz) and extract it
 2. Run:
 
 ```bash
@@ -123,7 +123,7 @@ bash install.sh
 # or: bash src/app/build.sh  →  bin/Cat Bedtime.app
 ```
 
-The cat lock-screen video `assets/cat-bedtime.mov` is bundled in release archives; a bare clone may omit large assets.
+The cat lock-screen video `assets/cat-bedtime.mov` is included in source and release archives; local release checks fail fast if it is missing.
 
 ---
 

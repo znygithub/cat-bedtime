@@ -6,9 +6,10 @@
 # Cursor IDE
 .cursor/
 
-# Large animation assets (downloaded separately)
+# Large animation scratch files
 assets/*.mov
 assets/*.mp4
+!assets/cat-bedtime.mov
 assets/*.backup-*
 
 # Compiled binaries
