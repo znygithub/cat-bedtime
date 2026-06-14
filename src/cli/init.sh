@@ -31,6 +31,14 @@ run_init() {
   local wakeup
   ui_input_time "$(msg init.wakeup.prompt)" wakeup "07:00"
 
+  if ! lock_duration_allowed_for_times "$bedtime" "$wakeup"; then
+    ui_blank
+    ui_error "$(msg config.error.lock_duration)"
+    ui_dim "$(msg init.retry)"
+    ui_blank
+    return 1
+  fi
+
   local days_csv
   ui_multiselect "$(msg init.days.prompt)" days_csv \
     "$(msg day.full.1):1:selected" \
@@ -42,7 +50,7 @@ run_init() {
     "$(msg day.full.7):7"
   ui_dim "$(msg init.days.hint)"
 
-  local winddown=15
+  local winddown=5
 
   ui_blank
 
@@ -62,7 +70,7 @@ run_init() {
     "" \
     "$(msg init.contract.sleep "$bedtime" "$wakeup")" \
     "$(msg init.contract.days "$days_display")" \
-    "$(msg init.contract.remind "15" "1")" \
+    "$(msg init.contract.remind "5" "1")" \
     "" \
     "  ${C_RED}${pledge_phrase}${RESET}")"
 
@@ -114,7 +122,7 @@ ENDJSON
     "" \
     "$(msg init.done.line1)" \
     "$(msg init.done.line2 "$bedtime")" \
-    "$(msg init.done.line3 "15" "1")" \
+    "$(msg init.done.line3 "5" "1")" \
     "" \
     "${DIM}$(msg init.done.hint)${RESET}")"
   ui_blank

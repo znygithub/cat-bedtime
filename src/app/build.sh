@@ -15,6 +15,13 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 L10N_SWIFT="$SCRIPT_DIR/../shared/L10n.swift"
 LOCALES_SRC="$SCRIPT_DIR/../../locales"
+CAT_ANIMATION_SRC="$SCRIPT_DIR/../../assets/cat-bedtime.mov"
+
+if [ ! -f "$CAT_ANIMATION_SRC" ]; then
+  echo "Missing required lock-screen animation: assets/cat-bedtime.mov" >&2
+  echo "Release builds must include this file or the sleep animation will show the missing-asset screen." >&2
+  exit 1
+fi
 
 swiftc -O -target arm64-apple-macos12 \
   -o "$TMP_DIR/zzz-app.arm64" \
@@ -51,6 +58,10 @@ cp -R "$SCRIPT_DIR/../../lib" "$APP_BUNDLE/Contents/Resources/lib"
 cp -R "$SCRIPT_DIR/../../src/cli" "$APP_BUNDLE/Contents/Resources/src/cli"
 mkdir -p "$APP_BUNDLE/Contents/Resources/assets"
 rsync -a --exclude '*.backup-*' "$SCRIPT_DIR/../../assets/" "$APP_BUNDLE/Contents/Resources/assets/"
+if [ ! -f "$APP_BUNDLE/Contents/Resources/assets/cat-bedtime.mov" ]; then
+  echo "Build error: app bundle is missing Resources/assets/cat-bedtime.mov" >&2
+  exit 1
+fi
 mkdir -p "$APP_BUNDLE/Contents/Resources/locales"
 cp "$LOCALES_SRC/messages.json" "$APP_BUNDLE/Contents/Resources/locales/messages.json"
 chmod +x "$APP_BUNDLE/Contents/Resources/bin/zzz-overlay"
@@ -72,9 +83,9 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'PLIST'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleVersion</key>
-  <string>1.0.0</string>
+  <string>1.1.2</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.0.0</string>
+  <string>1.1.2</string>
   <key>LSMinimumSystemVersion</key>
   <string>12.0</string>
   <key>NSHighResolutionCapable</key>

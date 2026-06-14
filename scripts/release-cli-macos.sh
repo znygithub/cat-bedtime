@@ -10,6 +10,12 @@ ARCHIVE_PATH="$DIST_DIR/cat-bedtime-cli-macos.tar.gz"
 
 source "$ROOT_DIR/src/signing.sh"
 
+if [ ! -f "$ROOT_DIR/assets/cat-bedtime.mov" ]; then
+  echo "Missing required lock-screen animation: assets/cat-bedtime.mov" >&2
+  echo "CLI release builds must include this file or the sleep animation will show the missing-asset screen." >&2
+  exit 1
+fi
+
 cleanup_stage() {
   rm -rf "$CLI_STAGE"
 }
@@ -39,6 +45,10 @@ mkdir -p "$CLI_STAGE/locales"
 install -m 644 "$ROOT_DIR/locales/messages.json" "$CLI_STAGE/locales/messages.json"
 mkdir -p "$CLI_STAGE/assets"
 rsync -a --exclude '*.backup-*' "$ROOT_DIR/assets/" "$CLI_STAGE/assets/"
+if [ ! -f "$CLI_STAGE/assets/cat-bedtime.mov" ]; then
+  echo "Build error: CLI archive stage is missing assets/cat-bedtime.mov" >&2
+  exit 1
+fi
 
 codesign --verify --verbose=2 "$CLI_STAGE/bin/zzz-overlay"
 

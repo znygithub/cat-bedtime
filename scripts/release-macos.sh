@@ -76,11 +76,11 @@ tell application "Finder"
     try
       set pathbar visible of container window to false
     end try
-    set bounds of container window to {160, 120, 760, 480}
+    set bounds of container window to {160, 120, 620, 390}
     set arrangement of icon view options of container window to not arranged
-    set icon size of icon view options of container window to 96
-    set position of item "Cat Bedtime.app" of container window to {190, 170}
-    set position of item "Applications" of container window to {410, 170}
+    set icon size of icon view options of container window to 88
+    set position of item "Cat Bedtime.app" of container window to {145, 140}
+    set position of item "Applications" of container window to {315, 140}
     update without registering applications
     close
   end tell

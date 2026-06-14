@@ -86,6 +86,16 @@ print(f'{total}|{completed}|{skipped}|{installed}')
 "
 }
 
+stats_completed_count() {
+  stats_ensure
+  python3 -c "
+import json
+with open('$STATS_FILE') as f: d = json.load(f)
+records = d.get('records', [])
+print(sum(1 for r in records if r.get('status') == 'completed'))
+"
+}
+
 # Get total usage days (since install)
 stats_days_since_install() {
   stats_ensure

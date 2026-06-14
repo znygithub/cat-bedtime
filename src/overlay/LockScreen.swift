@@ -52,6 +52,16 @@ private func fillRounded(_ rect: NSRect, radius: CGFloat, color: NSColor) {
     NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
 }
 
+private extension Notification.Name {
+    static let lockNoticeRequested = Notification.Name("CatBedtimeLockNoticeRequested")
+}
+
+private enum LockNoticeCenter {
+    static func show(_ message: String) {
+        NotificationCenter.default.post(name: .lockNoticeRequested, object: message)
+    }
+}
+
 // MARK: - Config
 
 struct SleepConfig {
@@ -482,6 +492,9 @@ class CatLockScreenView: NSView {
     private let assetBottom: CGFloat = 0.02
     private let lightsOutAt: Double = 7.0
     private let lightsOutDuration: Double = 0.38
+    private var noticeMessage: String?
+    private var noticeExpiresAt: Date = .distantPast
+    private var noticeObserver: NSObjectProtocol?
 
     init(frame: NSRect, config: SleepConfig) {
         self.config = config
@@ -492,18 +505,30 @@ class CatLockScreenView: NSView {
         layer?.isOpaque = false
         layer?.backgroundColor = NSColor.clear.cgColor
         startDisplayTimer()
+        noticeObserver = NotificationCenter.default.addObserver(
+            forName: .lockNoticeRequested,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let message = notification.object as? String else { return }
+            self?.showNotice(message)
+        }
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     deinit {
         displayTimer?.invalidate()
+        if let noticeObserver {
+            NotificationCenter.default.removeObserver(noticeObserver)
+        }
     }
 
     override var acceptsFirstResponder: Bool { true }
 
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 53 {
+            if event.isARepeat { return }
             if LockScreenRuntime.previewExitOnEsc { exit(0) }
             EmergencyExitCoordinator.shared.handleEscapeKey()
             return
@@ -548,6 +573,7 @@ class CatLockScreenView: NSView {
         let textAlpha = easeOutQuart(progress(uiTime, start: lightsOutAt + lightsOutDuration + 1.0, duration: 1.2))
         drawLockText(alpha: CGFloat(video == nil ? 1.0 : textAlpha))
         drawPreviewCountdown()
+        drawNotice()
     }
 
     private func clearForTransparentWindow() {
@@ -740,6 +766,50 @@ class CatLockScreenView: NSView {
         text.draw(in: textRect)
     }
 
+    private func showNotice(_ message: String) {
+        noticeMessage = message
+        noticeExpiresAt = Date().addingTimeInterval(2.8)
+        needsDisplay = true
+    }
+
+    private func drawNotice() {
+        guard let noticeMessage, Date() < noticeExpiresAt else {
+            noticeMessage = nil
+            return
+        }
+
+        let maxWidth = min(bounds.width * 0.72, 520)
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        paragraph.lineBreakMode = .byWordWrapping
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 18, weight: .semibold),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.90),
+            .paragraphStyle: paragraph,
+        ]
+        let text = NSAttributedString(string: noticeMessage, attributes: attrs)
+        let textRect = text.boundingRect(
+            with: NSSize(width: maxWidth - 44, height: 120),
+            options: [.usesLineFragmentOrigin, .usesFontLeading]
+        )
+        let width = max(260, ceil(textRect.width) + 44)
+        let height = max(58, ceil(textRect.height) + 28)
+        let rect = NSRect(
+            x: bounds.midX - width / 2,
+            y: max(42, bounds.height * 0.18),
+            width: width,
+            height: height
+        )
+
+        fillRounded(rect, radius: 12, color: NSColor.black.withAlphaComponent(0.68))
+        let border = NSBezierPath(roundedRect: rect, xRadius: 12, yRadius: 12)
+        NSColor.white.withAlphaComponent(0.12).setStroke()
+        border.lineWidth = 1
+        border.stroke()
+
+        text.draw(in: rect.insetBy(dx: 22, dy: (height - ceil(textRect.height)) / 2))
+    }
+
     private func currentTimeString() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
@@ -751,19 +821,27 @@ class CatLockScreenView: NSView {
 
 class EmergencyExitCoordinator {
     static let shared = EmergencyExitCoordinator()
-    private var lastEscapeAt: Date = .distantPast
-    private let escapeDoubleInterval: TimeInterval = 0.45
+    private var escapePresses: [Date] = []
+    private let escapeBurstInterval: TimeInterval = 1.2
 
     func handleEscapeKey() {
-        let now = Date()
-        if now.timeIntervalSince(lastEscapeAt) > escapeDoubleInterval {
-            lastEscapeAt = now
-            return
-        }
-        lastEscapeAt = .distantPast
         let fresh = SleepConfig.load()
         if LockWindowMath.canEmergencyExit(config: fresh, now: Date()) {
             exit(0)
+        }
+
+        let now = Date()
+        escapePresses = escapePresses.filter { now.timeIntervalSince($0) <= escapeBurstInterval }
+        escapePresses.append(now)
+
+        if escapePresses.count >= 3 {
+            escapePresses.removeAll()
+            LockNoticeCenter.show(L10n.t("lock.escape_restart"))
+            return
+        }
+
+        if escapePresses.count == 1 {
+            LockNoticeCenter.show(L10n.t("lock.escape_rest"))
         }
     }
 }
@@ -781,6 +859,7 @@ class LockAppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.keyCode == 53 {
+                if event.isARepeat { return nil }
                 if LockScreenRuntime.previewExitOnEsc { exit(0) }
                 EmergencyExitCoordinator.shared.handleEscapeKey()
             }

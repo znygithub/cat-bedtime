@@ -194,6 +194,16 @@ cmd_config() {
         ui_error "$(msg cli.error.time_format)"
         return 1
       fi
+      local current_wakeup
+      current_wakeup=$(config_get "wakeup")
+      if [ -z "$current_wakeup" ]; then
+        ui_error "$(msg cli.config.not_configured)"
+        return 1
+      fi
+      if ! lock_duration_allowed_for_times "$value" "$current_wakeup"; then
+        ui_error "$(msg config.error.lock_duration)"
+        return 1
+      fi
       config_set "bedtime" "$value"
       source "$LIB_DIR/schedule.sh"
       schedule_update
@@ -202,6 +212,16 @@ cmd_config() {
     wakeup)
       if [[ ! "$value" =~ ^([01]?[0-9]|2[0-3]):[0-5][0-9]$ ]]; then
         ui_error "$(msg cli.error.time_format)"
+        return 1
+      fi
+      local current_bedtime
+      current_bedtime=$(config_get "bedtime")
+      if [ -z "$current_bedtime" ]; then
+        ui_error "$(msg cli.config.not_configured)"
+        return 1
+      fi
+      if ! lock_duration_allowed_for_times "$current_bedtime" "$value"; then
+        ui_error "$(msg config.error.lock_duration)"
         return 1
       fi
       config_set "wakeup" "$value"

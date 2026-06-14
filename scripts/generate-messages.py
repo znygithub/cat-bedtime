@@ -93,6 +93,19 @@ add("delay.cancel", "取消", "取消", "Cancel", "キャンセル", "취소")
 add("delay.submit", "告知猫猫", "告知貓貓", "Tell the cat", "ねこに伝える", "고양이에게 알리기")
 add("delay.default_reason", "猫猫晚%d分钟来", "貓貓晚%d分鐘來", "Cat comes %d min later", "ねこが%d分遅れ", "고양이 %d분 늦게")
 add("delay.confirmed", "猫猫已知晓！今晚最新睡眠时间 %@", "貓貓已知曉！今晚最新睡眠時間 %@", "The cat got it! Latest sleep time tonight: %@", "ねこ、わかった！今夜の最新就寝時間は %@", "고양이가 알았어요! 오늘 밤 최신 취침 시간 %@")
+add("delay.lock_too_long", "这样会锁太久。锁屏时间需要少于 15 小时", "這樣會鎖太久。鎖屏時間需要少於 15 小時",
+    "That would lock too long. Lock time must be under 15 hours.", "ロックが長すぎます。15 時間未満にしてください。", "너무 오래 잠겨요. 잠금 시간은 15시간 미만이어야 해요.")
+add("lock_choice.title", "已经过了猫猫睡觉时间", "已經過了貓貓睡覺時間", "Cat bedtime has passed", "ねこの就寝時刻を過ぎています", "고양이 취침 시간이 지났어요")
+add("lock_choice.body",
+    "原定 %@ 睡觉，%@ 起床。",
+    "原定 %@ 睡覺，%@ 起床。",
+    "Bedtime was %@ and wake-up is %@.",
+    "就寝は %@、起床は %@ の予定でした。",
+    "취침은 %@, 기상은 %@ 예정이었어요.")
+add("lock_choice.delay", "%d 分钟后锁屏", "%d 分鐘後鎖屏", "Lock in %d min", "%d 分後にロック", "%d분 뒤 잠금")
+add("lock_choice.tomorrow", "明天再说", "明天再說", "Tomorrow", "明日にする", "내일로")
+add("lock_choice.delay_reason", "过点后选择 15 分钟后锁屏", "過點後選擇 15 分鐘後鎖屏", "Chose to lock 15 min after bedtime prompt", "就寝時刻後に 15 分後のロックを選択", "취침 시간이 지난 뒤 15분 뒤 잠금 선택")
+add("lock_choice.tomorrow_reason", "过点后选择明天再说", "過點後選擇明天再說", "Chose tomorrow after bedtime prompt", "就寝時刻後に明日にするを選択", "취침 시간이 지난 뒤 내일로 선택")
 add("dashboard.tonight_postponed", "今晚最新睡眠时间：%@", "今晚最新睡眠時間：%@", "Latest sleep time tonight: %@", "今夜の最新就寝時間：%@", "오늘 밤 최신 취침 시간: %@")
 add("dashboard.original_bedtime", "原定 %@", "原定 %@", "Originally %@", "元は %@", "원래 %@")
 add("notify.delay.title", "🐾 猫猫知道了", "🐾 貓貓知道了", "🐾 The cat got your message", "🐾 ねこ、わかった", "🐾 고양이가 알았어요")
@@ -100,11 +113,11 @@ add("notify.delay.subtitle", "今晚 %@ 睡觉", "今晚 %@ 睡覺", "Sleep time
 add("notify.delay.body", "到点它还会准时来的", "到點牠還會準時來的", "It'll still come on time", "時間になったら来ます", "시간이 되면 제때 올 거예요")
 add("quit.title", "确定要退出猫猫困了吗？", "確定要退出貓貓困了嗎？", "Quit Cat Bedtime?", "Cat Bedtime を終了しますか？", "Cat Bedtime를 종료할까요?")
 add("quit.message",
-    "退出会关闭设置 App\n但不会取消睡眠时间和后台定时任务，到点仍会锁屏",
-    "退出會關閉設定 App\n但不會取消睡眠時間和背景定時任務，到點仍會鎖屏",
-    "This quits the settings app.\nYour schedule and background task stay active, so lock screen still starts on time.",
-    "設定アプリを終了します。\nスケジュールとバックグラウンド処理は残り、時間になるとロックされます。",
-    "설정 앱이 종료됩니다.\n일정과 백그라운드 작업은 유지되며, 시간이 되면 잠금 화면이 켜집니다.")
+    "退出会关闭设置 App，并暂停后台定时任务。\n下次打开 App 后会恢复睡眠时间。",
+    "退出會關閉設定 App，並暫停背景定時任務。\n下次打開 App 後會恢復睡眠時間。",
+    "This quits the settings app and pauses the background schedule.\nOpen the app again to restore bedtime.",
+    "設定アプリを終了し、バックグラウンドのスケジュールを一時停止します。\n次にアプリを開くと就寝時刻が復元されます。",
+    "설정 앱을 종료하고 백그라운드 일정을 일시 중지합니다.\n앱을 다시 열면 취침 시간이 복원됩니다.")
 add("quit.confirm", "退出", "退出", "Quit", "終了", "종료")
 add("quit.cancel", "取消", "取消", "Cancel", "キャンセル", "취소")
 add("menu.quit", "退出猫猫困了", "退出貓貓困了", "Quit Cat Bedtime", "Cat Bedtime を終了", "Cat Bedtime 종료")
@@ -126,10 +139,26 @@ add("notify.winddown.subtitle", "还有 %d 分钟到关灯", "還有 %d 分鐘�
 add("notify.winddown.body", "收尾这一小段就好", "收尾這一小段就好", "Just wrap up this bit", "このあたりを片づけましょう", "이 정도만 마무리해요")
 add("notify.winddown.button", "知道啦", "知道啦", "Got it", "わかった", "알겠어요")
 add("notify.locksoon.title", "💤  它要去拉灯绳了", "💤  牠要去拉燈繩了", "💤  It's pulling the lamp cord", "💤  消灯のひもを引きに行きます", "💤  불 끄러 가요")
-add("notify.locksoon.subtitle", "一分钟后锁屏", "一分鐘後鎖屏", "Lock screen in one minute", "1 分後にロック", "1분 후 잠금")
-add("notify.locksoon.body", "手头的按个保存就好，今天到这", "手頭的按個保存就好，今天到這",
-    "Save what you're doing — that's enough for today", "手元の作業を保存して、今日はここまで", "하고 있던 건 저장하고, 오늘은 여기까지")
+add("notify.locksoon.subtitle", "约两分钟后锁屏", "約兩分鐘後鎖屏", "Lock screen in about two minutes", "約 2 分後にロック", "약 2분 후 잠금")
+add("notify.locksoon.body",
+    "猫猫睡觉后，电脑将无法使用（直到起床）。请尽快保存手头的事。",
+    "貓貓睡覺後，電腦將無法使用（直到起床）。請盡快保存手頭的事。",
+    "After the cat sleeps, the computer won't be usable until wake-up. Save your work now.",
+    "ねこが寝たあと、パソコンは（起床まで）使えません。手元の作業を保存してください。",
+    "고양이가 잠든 뒤에는 (기상할 때까지) 컴퓨터를 쓸 수 없어요. 하던 일을 저장하세요.")
 add("notify.locksoon.button", "好", "好", "OK", "OK", "좋아요")
+add("notify.bedtime.title", "猫猫困了（%d分钟后锁屏）", "貓貓睏了（%d分鐘後鎖屏）",
+    "The cat is sleepy (locks in %d min)", "ねこが眠そうです（%d 分後にロック）", "고양이가 졸려요 (%d분 후 잠금)")
+add("notify.bedtime.subtitle", "还有 %d 分钟锁屏", "還有 %d 分鐘鎖屏", "Lock screen in %d min", "あと %d 分でロック", "%d분 후 잠금")
+add("notify.bedtime.body", "到点后，电脑将被猫猫占用，请尽快收尾手头的工作", "到點後，電腦將被貓貓佔用，請盡快收尾手頭的工作",
+    "At bedtime, the cat takes over the computer. Please wrap up your work.", "時間になると、パソコンはねこが使います。作業を早めに終えてください。",
+    "시간이 되면 고양이가 컴퓨터를 차지해요. 하던 일을 마무리해 주세요.")
+add("notify.bedtime.ok", "知道了", "知道了", "Got it", "わかった", "알겠어요")
+add("notify.bedtime.postpone_5", "推迟 5 分钟", "推遲 5 分鐘", "Postpone 5 min", "5 分延長", "5분 미루기")
+add("notify.bedtime.postpone_reason", "睡前提醒推迟 5 分钟", "睡前提醒推遲 5 分鐘", "Bedtime reminder postponed 5 min", "就寝リマインダーを 5 分延長", "취침 알림 5분 미루기")
+add("notify.wakeup.title", "猫猫昨晚睡得很好", "貓貓昨晚睡得很好", "The cat slept well last night", "昨夜、ねこはよく眠れました", "고양이가 어젯밤 잘 잤어요")
+add("notify.wakeup.subtitle", "这是它来家里的第 %d 天了", "這是牠來家裡的第 %d 天了", "Day %d at home", "この家に来て %d 日目です", "집에 온 지 %d일째예요")
+add("notify.wakeup.body", "", "", "", "", "")
 
 # CLI keys (abbreviated - full set)
 cli_keys = [

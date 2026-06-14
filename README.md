@@ -48,19 +48,19 @@
 
 | 我想要 | 文件名 | 直接下载 | 适合谁 |
 | --- | --- | --- | --- |
-| **图形界面**（推荐） | `Cat-Bedtime-macOS.dmg` | [下载 DMG](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.0/Cat-Bedtime-macOS.dmg) | 像普通 Mac 软件一样安装，有窗口、有按钮 |
-| **命令行** | `cat-bedtime-cli-macos.tar.gz` | [下载 CLI 包](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.0/cat-bedtime-cli-macos.tar.gz) | 主要在「终端」里用 `zzz` 命令，具体命令参加下文（更推荐让你的Agent阅读该文档） |
+| **图形界面**（推荐） | `Cat-Bedtime-macOS.dmg` | [下载 DMG](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.2/Cat-Bedtime-macOS.dmg) | 像普通 Mac 软件一样安装，有窗口、有按钮 |
+| **命令行** | `cat-bedtime-cli-macos.tar.gz` | [下载 CLI 包](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.2/cat-bedtime-cli-macos.tar.gz) | 主要在「终端」里用 `zzz` 命令，具体命令参加下文（更推荐让你的Agent阅读该文档） |
 
 ### App 版（推荐大多数用户）
 
-1. 下载并打开 [Cat-Bedtime-macOS.dmg](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.0/Cat-Bedtime-macOS.dmg)
+1. 下载并打开 [Cat-Bedtime-macOS.dmg](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.2/Cat-Bedtime-macOS.dmg)
 2. 将 **Cat Bedtime.app** 拖到 **应用程序**
 3. 首次打开，按引导完成「猫猫领养」（睡觉时间、起床时间、每周哪几天来）
 4. 若系统提示无法打开：系统设置 → 隐私与安全性 → 仍要打开
 
 ### CLI 版（不想多下载一个APP的朋友）
 
-1. 下载 [cat-bedtime-cli-macos.tar.gz](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.0/cat-bedtime-cli-macos.tar.gz)（在「下载」文件夹里双击解压，或用归档实用工具打开）
+1. 下载 [cat-bedtime-cli-macos.tar.gz](https://github.com/znygithub/cat-bedtime/releases/download/v1.1.2/cat-bedtime-cli-macos.tar.gz)（在「下载」文件夹里双击解压，或用归档实用工具打开）
 2. 打开「终端」，进入解压出来的文件夹并安装：
 
 ```bash
@@ -75,6 +75,8 @@ bash install.sh
 
 App 与 CLI **共用** `~/.timetosleep/` 配置目录（兼容早期安装名）。请**只选一种**日常使用；若两版都装过，**最后一次**完成领养的版本会注册定时任务。
 
+若在睡觉时段内用 CLI 完成 `zzz init`，终端会提示与 App 相同的过点确认（「明天再说」/「15 分钟后锁屏」）；选完前不会注册定时任务。
+
 ---
 ## 常用命令（CLI 版）
 
@@ -86,6 +88,7 @@ zzz config                  # 查看日程
 zzz config bedtime 23:30    # 改睡觉时间
 zzz config wakeup 07:30     # 改起床时间
 zzz tonight off             # 今晚不来
+zzz tonight delay 30        # 今晚晚点 30 分钟
 zzz test 10                 # 测试锁屏 10 秒
 zzz uninstall               # 卸载
 ```
@@ -102,7 +105,7 @@ bash install.sh          # CLI
 bash src/app/build.sh    # 本地编译 App → bin/Cat Bedtime.app
 ```
 
-锁屏猫猫动画素材 `assets/cat-bedtime.mov` 体积较大，发布包内已包含；纯源码克隆若缺少该文件，锁屏会提示缺少素材。
+锁屏猫猫动画素材 `assets/cat-bedtime.mov` 已包含在源码与发布包内；本地打包前测试会校验它存在，避免发出缺素材的安装包。
 
 ---
 
